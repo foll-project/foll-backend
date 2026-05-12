@@ -134,3 +134,4 @@ C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\obj\Debug\net10.0
 C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\bin\Debug\net10.0\MediatR.dll
 C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\bin\Debug\net10.0\MediatR.Contracts.dll
 C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\bin\Debug\net10.0\MQTTnet.dll
+C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\obj\Debug\net10.0\foll-backend.sourcelink.json

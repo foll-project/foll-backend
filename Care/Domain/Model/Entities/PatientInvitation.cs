@@ -31,12 +31,16 @@ public class PatientInvitation
 
     public void Accept()
     {
+        if (Status != InvitationStatus.Pending)
+            throw new InvalidOperationException("La invitación no está pendiente.");
         if (IsExpired()) throw new InvalidOperationException("La invitación está expirada.");
         Status = InvitationStatus.Accepted;
     }
 
     public void Reject()
     {
+        if (Status != InvitationStatus.Pending)
+            throw new InvalidOperationException("La invitación no está pendiente.");
         if (IsExpired()) throw new InvalidOperationException("La invitación está expirada.");
         Status = InvitationStatus.Rejected;
     }

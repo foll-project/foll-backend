@@ -17,14 +17,9 @@ public class Patient
     public long? CurrentGuardianUserId { get; private set; }
     public long OfficialGuardianUserId { get; private set; }
 
-    private readonly List<CaregiverRole> _caregivers = [];
-    public IReadOnlyCollection<CaregiverRole> Caregivers => _caregivers;
-
-    private readonly List<EmergencyContact> _emergencyContacts = [];
-    public IReadOnlyCollection<EmergencyContact> EmergencyContacts => _emergencyContacts;
-
-    private readonly List<PatientInvitation> _invitations = [];
-    public IReadOnlyCollection<PatientInvitation> Invitations => _invitations;
+    public List<CaregiverRole> Caregivers { get; private set; }
+    public List<EmergencyContact> EmergencyContacts { get; private set; }
+    public List<PatientInvitation> Invitations { get; private set; }
 
     protected Patient()
     {
@@ -33,6 +28,10 @@ public class Patient
         LastName = string.Empty;
         MedicalConditions = new Dictionary<string, string>();
         BloodType = BloodType.Unknown;
+
+        Caregivers = new List<CaregiverRole>();
+        EmergencyContacts = new List<EmergencyContact>();
+        Invitations = new List<PatientInvitation>();
     }
 
     public Patient(
@@ -58,6 +57,10 @@ public class Patient
 
         OfficialGuardianUserId = officialGuardianUserId;
         CurrentGuardianUserId = officialGuardianUserId;
+
+        Caregivers = new List<CaregiverRole>();
+        EmergencyContacts = new List<EmergencyContact>();
+        Invitations = new List<PatientInvitation>();
     }
 
     public void AssignGuardShift(long newCurrentGuardianUserId, long actorUserId)
@@ -69,7 +72,7 @@ public class Patient
         CurrentGuardianUserId = newCurrentGuardianUserId;
     }
 
-    public void ClearGuardShift(long actorUserId)
+    public void RestoreGuardShift(long actorUserId)
     {
         if (actorUserId != OfficialGuardianUserId)
             throw new InvalidOperationException("Solo el OficialGuardian puede limpiar el turno de guardia.");
@@ -77,16 +80,38 @@ public class Patient
         CurrentGuardianUserId = OfficialGuardianUserId;
     }
 
-    public void AddCaregiver(long userId, string relationshipName)
+    public void UpdateBasicInfo(
+        string firstName,
+        string lastName,
+        DateOnly birthDate,
+        BloodType bloodType,
+        Dictionary<string, string>? medicalConditions)
+    {
+        if (string.IsNullOrWhiteSpace(firstName)) throw new ArgumentException("El nombre es obligatorio.", nameof(firstName));
+        if (string.IsNullOrWhiteSpace(lastName)) throw new ArgumentException("El apellido es obligatorio.", nameof(lastName));
+
+        FirstName = firstName.Trim();
+        LastName = lastName.Trim();
+        BirthDate = birthDate;
+        BloodType = bloodType;
+        MedicalConditions = medicalConditions ?? new Dictionary<string, string>();
+    }
+
+    public void AddCaregiver(long userId, short relationshipTypeId)
     {
         if (userId <= 0) throw new ArgumentOutOfRangeException(nameof(userId));
-        if (string.IsNullOrWhiteSpace(relationshipName))
-            throw new ArgumentException("El tipo de relación es obligatorio.", nameof(relationshipName));
+        if (relationshipTypeId <= 0) throw new ArgumentOutOfRangeException(nameof(relationshipTypeId));
 
-        if (_caregivers.Any(c => c.UserId == userId))
+        if (Caregivers.Any(c => c.UserId == userId))
             throw new InvalidOperationException("El usuario ya está vinculado como cuidador.");
 
-        _caregivers.Add(new CaregiverRole(userId, relationshipName.Trim()));
+        Caregivers.Add(new CaregiverRole(userId, relationshipTypeId));
+    }
+
+    public void RemoveCaregiver(long userId)
+    {
+        if (userId <= 0) throw new ArgumentOutOfRangeException(nameof(userId));
+        Caregivers.RemoveAll(c => c.UserId == userId);
     }
 
     public void AddEmergencyContact(string fullName, string phoneNumber, string relationship)
@@ -95,6 +120,47 @@ public class Patient
         if (string.IsNullOrWhiteSpace(phoneNumber)) throw new ArgumentException("El teléfono es obligatorio.", nameof(phoneNumber));
         if (string.IsNullOrWhiteSpace(relationship)) throw new ArgumentException("La relación es obligatoria.", nameof(relationship));
 
-        _emergencyContacts.Add(new EmergencyContact(fullName.Trim(), phoneNumber.Trim(), relationship.Trim()));
+        EmergencyContacts.Add(new EmergencyContact(fullName.Trim(), phoneNumber.Trim(), relationship.Trim()));
+    }
+
+    public void RemoveEmergencyContact(long emergencyContactId)
+    {
+        if (emergencyContactId <= 0) throw new ArgumentOutOfRangeException(nameof(emergencyContactId));
+        EmergencyContacts.RemoveAll(c => c.EmergencyContactId == emergencyContactId);
+    }
+
+    public PatientInvitation CreateInvitation(long invitingUserId, short relationshipTypeId, DateTime expiresAt)
+    {
+        if (PatientId <= 0)
+            throw new InvalidOperationException("El paciente debe estar persistido antes de crear invitaciones.");
+
+        var invitation = new PatientInvitation(PatientId, invitingUserId, relationshipTypeId, expiresAt);
+        Invitations.Add(invitation);
+        return invitation;
+    }
+
+    public void AcceptInvitation(long invitationId, long actorUserId)
+    {
+        if (actorUserId != OfficialGuardianUserId)
+            throw new InvalidOperationException("Solo el OficialGuardian puede aceptar invitaciones.");
+
+        var invitation = Invitations.FirstOrDefault(i => i.PatientInvitationId == invitationId);
+        if (invitation is null)
+            throw new InvalidOperationException("Invitación no encontrada.");
+
+        invitation.Accept();
+        AddCaregiver(invitation.InvitingUserId, invitation.RelationshipTypeId);
+    }
+
+    public void RejectInvitation(long invitationId, long actorUserId)
+    {
+        if (actorUserId != OfficialGuardianUserId)
+            throw new InvalidOperationException("Solo el OficialGuardian puede rechazar invitaciones.");
+
+        var invitation = Invitations.FirstOrDefault(i => i.PatientInvitationId == invitationId);
+        if (invitation is null)
+            throw new InvalidOperationException("Invitación no encontrada.");
+
+        invitation.Reject();
     }
 }

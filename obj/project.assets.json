@@ -3005,11 +3005,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\cbm4y\\OneDrive\\Escritorio\\Arqui\\proyecto\\foll-backend\\foll-backend.csproj",
+      "projectUniqueName": "c:\\Users\\cbm4y\\OneDrive\\Escritorio\\Arqui\\proyecto\\foll-backend\\foll-backend.csproj",
       "projectName": "foll-backend",
-      "projectPath": "C:\\Users\\cbm4y\\OneDrive\\Escritorio\\Arqui\\proyecto\\foll-backend\\foll-backend.csproj",
+      "projectPath": "c:\\Users\\cbm4y\\OneDrive\\Escritorio\\Arqui\\proyecto\\foll-backend\\foll-backend.csproj",
       "packagesPath": "C:\\Users\\cbm4y\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\cbm4y\\OneDrive\\Escritorio\\Arqui\\proyecto\\foll-backend\\obj\\",
+      "outputPath": "c:\\Users\\cbm4y\\OneDrive\\Escritorio\\Arqui\\proyecto\\foll-backend\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\cbm4y\\AppData\\Roaming\\NuGet\\NuGet.Config",

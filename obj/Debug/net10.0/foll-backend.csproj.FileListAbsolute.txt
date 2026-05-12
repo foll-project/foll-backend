@@ -1,7 +1,6 @@
 C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\bin\Debug\net10.0\appsettings.Development.json
 C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\bin\Debug\net10.0\appsettings.json
 C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\bin\Debug\net10.0\foll-backend.staticwebassets.endpoints.json
-C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\bin\Debug\net10.0\foll-backend.exe
 C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\bin\Debug\net10.0\foll-backend.deps.json
 C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\bin\Debug\net10.0\foll-backend.runtimeconfig.json
 C:\Users\cbm4y\OneDrive\Escritorio\Arqui\proyecto\foll-backend\bin\Debug\net10.0\foll-backend.dll

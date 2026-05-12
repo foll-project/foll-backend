@@ -1,7 +1,15 @@
+using foll_backend.Care.Application.ACL;
 using System.Text;
+using foll_backend.Care.Application.Internal.CommandServices;
+using foll_backend.Care.Application.Internal.QueryServices;
+using foll_backend.Care.Application.OutboundServices;
+using foll_backend.Care.Domain.Repositories;
+using foll_backend.Care.Domain.Services;
+using foll_backend.Care.Infrastructure.Persistence.EFC.Repositories;
 using foll_backend.IAM.Application.Internal.CommandServices;
 using foll_backend.IAM.Application.Internal.QueryServices;
 using foll_backend.IAM.Application.OutboundServices;
+using foll_backend.IAM.Application.ACL;
 using foll_backend.IAM.Domain.Repositories;
 using foll_backend.IAM.Domain.Services;
 using foll_backend.IAM.Infrastructure.Hashing;
@@ -15,10 +23,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using foll_backend.Shared.Infrastructure.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(connectionString)
@@ -38,20 +48,21 @@ builder.Services.AddSwaggerGen(options =>
         Description = "API con arquitectura DDD y Bounded Contexts"
     });
 
-    var bearerScheme = new OpenApiSecurityScheme
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Ingrese 'Bearer {token}' o solo el token en el campo."
-    };
+        Description = "Pegue SOLO el JWT, sin escribir Bearer."
+    });
 
-    options.AddSecurityDefinition("Bearer", bearerScheme);
+    options.OperationFilter<AuthorizeOperationFilter>();
 });
 
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];
+
 if (!string.IsNullOrEmpty(jwtSecret))
 {
     var key = Encoding.ASCII.GetBytes(jwtSecret);
@@ -65,6 +76,7 @@ if (!string.IsNullOrEmpty(jwtSecret))
         {
             options.RequireHttpsMetadata = false;
             options.SaveToken = true;
+
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -76,6 +88,8 @@ if (!string.IsNullOrEmpty(jwtSecret))
         });
 }
 
+builder.Services.AddAuthorization();
+
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddScoped<IHashingService, BcryptHashingService>();
@@ -83,19 +97,29 @@ builder.Services.AddScoped<ITokenService, JwtTokenService>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
+builder.Services.AddScoped<IUserInfoAcl, UserInfoAcl>();
+
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
 
+builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+builder.Services.AddScoped<IPatientInvitationRepository, PatientInvitationRepository>();
+builder.Services.AddScoped<IRelationshipTypeRepository, RelationshipTypeRepository>();
+
+builder.Services.AddScoped<IPatientCommandService, PatientCommandService>();
+builder.Services.AddScoped<IPatientQueryService, PatientQueryService>();
+builder.Services.AddScoped<IRelationshipTypeQueryService, RelationshipTypeQueryService>();
+builder.Services.AddScoped<IUserInfoService, UserInfoService>();
+
 var app = builder.Build();
 
-// Do NOT apply migrations automatically by default. This allows the repository
-// to keep migration files in code while preventing automatic DB changes on startup.
-// To apply migrations on startup set ApplyMigrationsOnStartup = true in appsettings.
 var applyMigrations = builder.Configuration.GetValue<bool>("ApplyMigrationsOnStartup", true);
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<AppDbContext>();
+
     if (applyMigrations)
     {
         context.Database.Migrate();
@@ -107,10 +131,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else if (builder.Configuration.GetValue<bool>("Swagger:Enabled"))
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

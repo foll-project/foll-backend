@@ -6,6 +6,15 @@ using foll_backend.Care.Application.OutboundServices;
 using foll_backend.Care.Domain.Repositories;
 using foll_backend.Care.Domain.Services;
 using foll_backend.Care.Infrastructure.Persistence.EFC.Repositories;
+using foll_backend.DeviceManagment.Application.ACL;
+using foll_backend.DeviceManagment.Application.Internal.CommandServices;
+using foll_backend.DeviceManagment.Application.Internal.QueryServices;
+using foll_backend.DeviceManagment.Application.OutboundServices;
+using foll_backend.DeviceManagment.Domain.Repositories;
+using foll_backend.DeviceManagment.Domain.Services;
+using foll_backend.DeviceManagment.Infrastructure.Configuration;
+using foll_backend.DeviceManagment.Infrastructure.Messaging;
+using foll_backend.DeviceManagment.Infrastructure.Persistence.EFC.Repositories;
 using foll_backend.IAM.Application.Internal.CommandServices;
 using foll_backend.IAM.Application.Internal.QueryServices;
 using foll_backend.IAM.Application.OutboundServices;
@@ -18,6 +27,7 @@ using foll_backend.IAM.Infrastructure.Tokens;
 using foll_backend.Shared.Domain.Repositories;
 using foll_backend.Shared.Infrastructure.Persistence.EFC.Configuration;
 using foll_backend.Shared.Infrastructure.Persistence.EFC.Repositories;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -38,6 +48,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
+builder.Services.Configure<MqttOptions>(builder.Configuration.GetSection("Mqtt"));
+builder.Services.Configure<DeviceMonitoringOptions>(builder.Configuration.GetSection("DeviceMonitoring"));
+builder.Services.Configure<OutboxOptions>(builder.Configuration.GetSection("Outbox"));
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -98,6 +113,7 @@ builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddScoped<IUserInfoAcl, UserInfoAcl>();
+builder.Services.AddScoped<IPatientDeviceAcl, PatientDeviceAcl>();
 
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
@@ -110,6 +126,19 @@ builder.Services.AddScoped<IPatientCommandService, PatientCommandService>();
 builder.Services.AddScoped<IPatientQueryService, PatientQueryService>();
 builder.Services.AddScoped<IRelationshipTypeQueryService, RelationshipTypeQueryService>();
 builder.Services.AddScoped<IUserInfoService, UserInfoService>();
+
+builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
+builder.Services.AddScoped<IDeviceEventRepository, DeviceEventRepository>();
+builder.Services.AddScoped<IOutboxMessageRepository, OutboxMessageRepository>();
+
+builder.Services.AddScoped<IPatientAccessService, PatientAccessService>();
+builder.Services.AddScoped<IDeviceAssignmentAcl, DeviceAssignmentAcl>();
+builder.Services.AddScoped<IDeviceCommandService, DeviceCommandService>();
+builder.Services.AddScoped<IDeviceQueryService, DeviceQueryService>();
+
+builder.Services.AddHostedService<MqttHeartbeatSubscriberBackgroundService>();
+builder.Services.AddHostedService<DeviceConnectivityMonitorBackgroundService>();
+builder.Services.AddHostedService<OutboxPublisherBackgroundService>();
 
 var app = builder.Build();
 

@@ -203,6 +203,129 @@ namespace foll_backend.Migrations
                         });
                 });
 
+            modelBuilder.Entity("foll_backend.DeviceManagment.Domain.Model.Entities.Device", b =>
+                {
+                    b.Property<long>("DeviceId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("device_id");
+
+                    b.Property<long?>("AssignedPatientId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("assigned_patient_id");
+
+                    b.Property<short?>("ConnectivityStatus")
+                        .HasColumnType("smallint")
+                        .HasColumnName("connectivity_status");
+
+                    b.Property<short?>("CurrentBatteryLevel")
+                        .HasColumnType("smallint")
+                        .HasColumnName("current_battery_level");
+
+                    b.Property<string>("FirmwareVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("firmware_version");
+
+                    b.Property<bool?>("IsCharging")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_charging");
+
+                    b.Property<DateTime?>("LastConnectivityChangeAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_connectivity_change_at");
+
+                    b.Property<DateTime?>("LastHeartbeatAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_heartbeat_at");
+
+                    b.Property<DateTime?>("MonitoringStartedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("monitoring_started_at");
+
+                    b.Property<short>("Status")
+                        .HasColumnType("smallint")
+                        .HasColumnName("status");
+
+                    b.HasKey("DeviceId")
+                        .HasName("pk_devices");
+
+                    b.HasIndex("AssignedPatientId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_devices_assigned_patient_id");
+
+                    b.ToTable("devices", "device");
+
+                    b.HasData(
+                        new
+                        {
+                            DeviceId = 1001L,
+                            FirmwareVersion = "sim-1.0.0",
+                            Status = (short)1
+                        },
+                        new
+                        {
+                            DeviceId = 1002L,
+                            FirmwareVersion = "sim-1.0.0",
+                            Status = (short)1
+                        });
+                });
+
+            modelBuilder.Entity("foll_backend.DeviceManagment.Domain.Model.Entities.DeviceEvent", b =>
+                {
+                    b.Property<long>("DeviceEventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("device_event_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("DeviceEventId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("DeviceId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("device_id");
+
+                    b.Property<string>("EventPayload")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("event_payload");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("event_type");
+
+                    b.Property<bool>("IsResolved")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_resolved");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("resolved_at");
+
+                    b.HasKey("DeviceEventId")
+                        .HasName("pk_device_events");
+
+                    b.HasIndex("DeviceId")
+                        .HasDatabaseName("ix_device_events_device_id");
+
+                    b.HasIndex("DeviceId", "EventType")
+                        .IsUnique()
+                        .HasDatabaseName("ix_device_events_device_id_event_type")
+                        .HasFilter("\"is_resolved\" = false");
+
+                    b.HasIndex("DeviceId", "EventType", "IsResolved")
+                        .HasDatabaseName("ix_device_events_device_id_event_type_is_resolved");
+
+                    b.ToTable("device_events", "device");
+                });
+
             modelBuilder.Entity("foll_backend.IAM.Domain.Model.Entities.User", b =>
                 {
                     b.Property<long>("UserId")
@@ -257,6 +380,54 @@ namespace foll_backend.Migrations
                         .HasDatabaseName("ix_users_email");
 
                     b.ToTable("users", "iam");
+                });
+
+            modelBuilder.Entity("foll_backend.Shared.Domain.Model.Entities.OutboxMessage", b =>
+                {
+                    b.Property<long>("OutboxMessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("outbox_message_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("OutboxMessageId"));
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("error");
+
+                    b.Property<DateTime>("OccurredOn")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_on");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload");
+
+                    b.Property<DateTime?>("ProcessedOn")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("processed_on");
+
+                    b.Property<int>("RetryCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("retry_count");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("type");
+
+                    b.HasKey("OutboxMessageId")
+                        .HasName("pk_outbox_messages");
+
+                    b.HasIndex("ProcessedOn")
+                        .HasDatabaseName("ix_outbox_messages_processed_on");
+
+                    b.ToTable("outbox_messages", "device");
                 });
 
             modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.EmergencyContact", b =>

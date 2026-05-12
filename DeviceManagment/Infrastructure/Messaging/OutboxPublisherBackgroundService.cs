@@ -1,6 +1,6 @@
 using System.Text.Json;
 using foll_backend.DeviceManagment.Application.Internal.Notifications;
-using foll_backend.DeviceManagment.Infrastructure.Configuration;
+using foll_backend.Shared.Infrastructure.Configuration;
 using foll_backend.Shared.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Options;

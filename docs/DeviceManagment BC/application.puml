@@ -1,0 +1,173 @@
+@startuml DeviceManagment_Application
+title DeviceManagment - Application Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS DEL DOMINIO (referenciados)
+' =======================
+interface IDeviceCommandService
+interface IDeviceQueryService
+interface IDeviceRepository
+interface IDeviceEventRepository
+
+' =======================
+' COMMAND / QUERY SERVICES
+' =======================
+class DeviceCommandService {
+    - IDeviceRepository _deviceRepository
+    - IDeviceEventRepository _deviceEventRepository
+    - IOutboxMessageRepository _outboxMessageRepository
+    - IPatientAccessService _patientAccessService
+    - IUnitOfWork _unitOfWork
+    - DeviceMonitoringOptions _monitoringOptions
+    --
+    + Handle(command: LinkDeviceCommand): Task
+    + Handle(command: UnlinkDeviceCommand): Task
+    + Handle(command: RegisterDeviceTelemetryCommand): Task
+    + Handle(command: CheckDeviceConnectivityCommand): Task
+    + Handle(command: UpdateDevicePowerStateCommand): Task
+}
+
+class DeviceQueryService {
+    - IDeviceRepository _deviceRepository
+    - IPatientAccessService _patientAccessService
+    --
+    + Handle(query: GetDeviceStatusByIdQuery): Task<Device>
+    + Handle(query: GetDeviceByPatientIdQuery): Task<Device>
+}
+
+' =======================
+' OUTBOUND SERVICES (puertos hacia otros BCs)
+' =======================
+interface IPatientAccessService {
+    + CanManageDevicesAsync(actorUserId: Long, patientId: Long): Task<bool>
+}
+
+class PatientAccessService {
+    - IPatientDeviceAcl _patientDeviceAcl
+    --
+    + CanManageDevicesAsync(actorUserId: Long, patientId: Long): Task<bool>
+}
+
+' =======================
+' ACL (puertos publicados a otros BCs)
+' =======================
+interface IDeviceAssignmentAcl {
+    + GetAssignmentByDeviceIdAsync(deviceId: Long): Task<DeviceAssignmentDto>
+}
+
+class DeviceAssignmentAcl {
+    - IDeviceRepository _deviceRepository
+    --
+    + GetAssignmentByDeviceIdAsync(deviceId: Long): Task<DeviceAssignmentDto>
+}
+
+class DeviceAssignmentDto <<dto>> {
+    - Long DeviceId
+    - Long AssignedPatientId
+    - String Status
+    - String ConnectivityStatus
+}
+
+' =======================
+' INTEGRATION EVENTS (Outbox -> MediatR)
+' =======================
+class LowBatteryDetectedIntegrationEvent <<integration event>> {
+    - Long DeviceId
+    - Long PatientId
+    - Short BatteryLevel
+    - DateTime ReportedAtUtc
+}
+
+class LowBatteryResolvedIntegrationEvent <<integration event>> {
+    - Long DeviceId
+    - Long PatientId
+    - Short BatteryLevel
+    - DateTime ReportedAtUtc
+}
+
+class DeviceDisconnectedIntegrationEvent <<integration event>> {
+    - Long DeviceId
+    - Long PatientId
+    - DateTime DetectedAtUtc
+    - DateTime LastSeenAtUtc
+    - ConnectivityChangeCause Cause
+}
+
+class DeviceReconnectedIntegrationEvent <<integration event>> {
+    - Long DeviceId
+    - Long PatientId
+    - DateTime ReportedAtUtc
+    - ConnectivityChangeCause Cause
+}
+
+class LowBatteryDetectedIntegrationEventHandler <<handler>> {
+    - ILogger _logger
+    --
+    + Handle(notification: LowBatteryDetectedIntegrationEvent, ct: CancellationToken): Task
+}
+
+class LowBatteryResolvedIntegrationEventHandler <<handler>> {
+    - ILogger _logger
+    --
+    + Handle(notification: LowBatteryResolvedIntegrationEvent, ct: CancellationToken): Task
+}
+
+class DeviceDisconnectedIntegrationEventHandler <<handler>> {
+    - ILogger _logger
+    --
+    + Handle(notification: DeviceDisconnectedIntegrationEvent, ct: CancellationToken): Task
+}
+
+class DeviceReconnectedIntegrationEventHandler <<handler>> {
+    - ILogger _logger
+    --
+    + Handle(notification: DeviceReconnectedIntegrationEvent, ct: CancellationToken): Task
+}
+
+class DeviceManagmentEventTypes <<constants>> {
+    + {static} LowBatteryDetectedV1: String
+    + {static} LowBatteryResolvedV1: String
+    + {static} DeviceDisconnectedV1: String
+    + {static} DeviceReconnectedV1: String
+}
+
+' =======================
+' RELACIONES
+' =======================
+DeviceCommandService ..|> IDeviceCommandService
+DeviceQueryService ..|> IDeviceQueryService
+
+DeviceCommandService --> IDeviceRepository : usa
+DeviceCommandService --> IDeviceEventRepository : usa
+DeviceCommandService --> IOutboxMessageRepository : usa
+DeviceCommandService --> IPatientAccessService : usa
+DeviceCommandService --> IUnitOfWork : usa
+
+DeviceQueryService --> IDeviceRepository : usa
+DeviceQueryService --> IPatientAccessService : usa
+
+PatientAccessService ..|> IPatientAccessService
+PatientAccessService --> IPatientDeviceAcl : delega
+
+DeviceAssignmentAcl ..|> IDeviceAssignmentAcl
+DeviceAssignmentAcl --> IDeviceRepository : usa
+IDeviceAssignmentAcl ..> DeviceAssignmentDto : retorna
+
+LowBatteryDetectedIntegrationEventHandler ..> LowBatteryDetectedIntegrationEvent : maneja
+LowBatteryResolvedIntegrationEventHandler ..> LowBatteryResolvedIntegrationEvent : maneja
+DeviceDisconnectedIntegrationEventHandler ..> DeviceDisconnectedIntegrationEvent : maneja
+DeviceReconnectedIntegrationEventHandler ..> DeviceReconnectedIntegrationEvent : maneja
+
+DeviceCommandService ..> LowBatteryDetectedIntegrationEvent : publica
+DeviceCommandService ..> LowBatteryResolvedIntegrationEvent : publica
+DeviceCommandService ..> DeviceDisconnectedIntegrationEvent : publica
+DeviceCommandService ..> DeviceReconnectedIntegrationEvent : publica
+DeviceCommandService ..> DeviceManagmentEventTypes : usa
+
+DeviceDisconnectedIntegrationEvent --> ConnectivityChangeCause : usa
+DeviceReconnectedIntegrationEvent --> ConnectivityChangeCause : usa
+
+@enduml

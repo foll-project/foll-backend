@@ -1,0 +1,183 @@
+@startuml Care_Domain
+title Care - Domain Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' ENUMS
+' =======================
+enum BloodType {
+    Unknown
+    APositive
+    ANegative
+    BPositive
+    BNegative
+    ABPositive
+    ABNegative
+    OPositive
+    ONegative
+}
+
+enum InvitationStatus {
+    Pending
+    Accepted
+    Rejected
+}
+
+' =======================
+' VALUE OBJECTS
+' =======================
+class CaregiverRole <<value object>> {
+    - Long UserId
+    - Short RelationshipTypeId
+}
+
+class UserInfo <<value object>> {
+    - Long UserId
+    - String Email
+    - String FirstName
+    - String LastName
+    - String PhoneNumber
+}
+
+' =======================
+' ENTIDADES
+' =======================
+class Patient {
+    - Long PatientId
+    - String Dni
+    - String FirstName
+    - String LastName
+    - DateOnly BirthDate
+    - BloodType BloodType
+    - Dictionary<String,String> MedicalConditions
+    - Long CurrentGuardianUserId
+    - Long OfficialGuardianUserId
+    - List<CaregiverRole> Caregivers
+    - List<EmergencyContact> EmergencyContacts
+    - List<PatientInvitation> Invitations
+    --
+    + AssignGuardShift(newCurrentGuardianUserId: Long, actorUserId: Long)
+    + RestoreGuardShift(actorUserId: Long)
+    + UpdateBasicInfo(firstName: String, lastName: String, birthDate: DateOnly, bloodType: BloodType, medicalConditions: Dictionary<String,String>)
+    + AddCaregiver(userId: Long, relationshipTypeId: Short)
+    + RemoveCaregiver(userId: Long)
+    + AddEmergencyContact(fullName: String, phoneNumber: String, relationship: String)
+    + RemoveEmergencyContact(emergencyContactId: Long)
+    + CreateInvitation(invitingUserId: Long, relationshipTypeId: Short, expiresAt: DateTime): PatientInvitation
+    + AcceptInvitation(invitationId: Long, actorUserId: Long)
+    + RejectInvitation(invitationId: Long, actorUserId: Long)
+}
+
+class EmergencyContact {
+    - Long EmergencyContactId
+    - Long PatientId
+    - String FullName
+    - String PhoneNumber
+    - String Relationship
+}
+
+class PatientInvitation {
+    - Long PatientInvitationId
+    - Long PatientId
+    - Long InvitingUserId
+    - Short RelationshipTypeId
+    - InvitationStatus Status
+    - DateTime ExpiresAt
+    --
+    + Accept()
+    + Reject()
+    + IsExpired(): bool
+}
+
+class RelationshipType {
+    - Short RelationshipTypeId
+    - String Name
+}
+
+' =======================
+' COMMANDS / QUERIES
+' =======================
+class CreatePatientCommand <<command>>
+class UpdatePatientCommand <<command>>
+class AssignGuardShiftCommand <<command>>
+class RestoreGuardShiftCommand <<command>>
+class AddEmergencyContactCommand <<command>>
+class RemoveEmergencyContactCommand <<command>>
+class CreateInvitationCommand <<command>>
+class AcceptInvitationCommand <<command>>
+class RejectInvitationCommand <<command>>
+
+class GetPatientByIdQuery <<query>>
+class GetPatientByDniQuery <<query>>
+class GetPatientsForUserQuery <<query>>
+class GetCaregiversByPatientIdQuery <<query>>
+class GetInvitationsByPatientDniQuery <<query>>
+class GetInvitationByIdQuery <<query>>
+class ListRelationshipTypesQuery <<query>>
+
+' =======================
+' REPOSITORIOS / SERVICIOS DE DOMINIO
+' =======================
+interface IPatientRepository {
+    + FindByDniAsync(dni: String): Task<Patient>
+    + ListForUserAsync(userId: Long): Task<IEnumerable<Patient>>
+    + FindByIdAsync(id: Long): Task<Patient>
+    + AddAsync(patient: Patient): Task
+}
+
+interface IPatientInvitationRepository {
+    + ListByPatientIdAsync(patientId: Long): Task<IEnumerable<PatientInvitation>>
+    + FindByIdAsync(id: Long): Task<PatientInvitation>
+    + AddAsync(invitation: PatientInvitation): Task
+}
+
+interface IRelationshipTypeRepository {
+    + FindByIdAsync(id: Short): Task<RelationshipType>
+    + ListAsync(): Task<IEnumerable<RelationshipType>>
+}
+
+interface IPatientCommandService {
+    + Handle(command: CreatePatientCommand): Task<Long>
+    + Handle(command: UpdatePatientCommand): Task
+    + Handle(command: AssignGuardShiftCommand): Task
+    + Handle(command: RestoreGuardShiftCommand): Task
+    + Handle(command: AddEmergencyContactCommand): Task<Long>
+    + Handle(command: RemoveEmergencyContactCommand): Task
+    + Handle(command: CreateInvitationCommand): Task<Long>
+    + Handle(command: AcceptInvitationCommand): Task
+    + Handle(command: RejectInvitationCommand): Task
+}
+
+interface IPatientQueryService {
+    + Handle(query: GetPatientByIdQuery): Task<Patient>
+    + Handle(query: GetPatientByDniQuery): Task<Patient>
+    + Handle(query: GetPatientsForUserQuery): Task<IEnumerable<Patient>>
+    + Handle(query: GetCaregiversByPatientIdQuery): Task<IEnumerable<CaregiverRole>>
+    + Handle(query: GetInvitationsByPatientDniQuery): Task<IEnumerable<PatientInvitation>>
+    + Handle(query: GetInvitationByIdQuery): Task<PatientInvitation>
+}
+
+interface IRelationshipTypeQueryService {
+    + Handle(query: ListRelationshipTypesQuery): Task<IEnumerable<RelationshipType>>
+}
+
+' =======================
+' RELACIONES
+' =======================
+Patient "1" *-- "*" CaregiverRole : contiene
+Patient "1" *-- "*" EmergencyContact : contiene
+Patient "1" *-- "*" PatientInvitation : contiene
+
+Patient --> BloodType : usa
+PatientInvitation --> InvitationStatus : usa
+
+CaregiverRole ..> RelationshipType : referencia por id
+PatientInvitation ..> RelationshipType : referencia por id
+
+IPatientRepository ..> Patient : opera sobre
+IPatientInvitationRepository ..> PatientInvitation : opera sobre
+IRelationshipTypeRepository ..> RelationshipType : opera sobre
+
+@enduml

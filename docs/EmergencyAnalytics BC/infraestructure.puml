@@ -1,0 +1,143 @@
+@startuml EmergencyAnalytics_Infrastructure
+title EmergencyAnalytics - Infrastructure Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS (referenciados)
+' =======================
+interface IEmergencyIncidentRepository
+interface IFallTypeRepository
+interface IEmergencyOutboxMessageRepository
+interface IEmergencyIncidentCommandService
+
+class "BaseRepository<EmergencyIncident>" as BaseRepositoryIncident
+class "BaseRepository<FallType>" as BaseRepositoryFallType
+class "BaseRepository<EmergencyOutboxMessage>" as BaseRepositoryOutbox
+
+' =======================
+' PERSISTENCIA - REPOSITORIES (EFC)
+' =======================
+class EmergencyIncidentRepository {
+    + EmergencyIncidentRepository(context: AppDbContext)
+    + FindLatestOpenByDeviceIdAsync(deviceId: Long): Task<EmergencyIncident>
+    + FindActiveByPatientIdAsync(patientId: Long): Task<EmergencyIncident>
+    + FindByIdWithFallTypeAsync(incidentId: Long): Task<EmergencyIncident>
+    + ListByPatientIdAsync(patientId: Long): Task<IReadOnlyCollection<EmergencyIncident>>
+}
+
+class FallTypeRepository {
+    + FallTypeRepository(context: AppDbContext)
+    + FindByIdAsync(id: Short): Task<FallType>
+    + FindByNameAsync(name: String): Task<FallType>
+}
+
+class EmergencyOutboxMessageRepository {
+    + EmergencyOutboxMessageRepository(context: AppDbContext)
+    + ListPendingAsync(batchSize: Int): Task<IReadOnlyCollection<EmergencyOutboxMessage>>
+}
+
+' =======================
+' PERSISTENCIA - ENTITY CONFIGURATIONS
+' =======================
+class EmergencyIncidentConfiguration <<entity configuration>> {
+    + Configure(builder: EntityTypeBuilder<EmergencyIncident>)
+}
+
+class FallTypeConfiguration <<entity configuration>> {
+    + Configure(builder: EntityTypeBuilder<FallType>)
+}
+
+class EmergencyOutboxMessageConfiguration <<entity configuration>> {
+    + Configure(builder: EntityTypeBuilder<EmergencyOutboxMessage>)
+}
+
+interface "IEntityTypeConfiguration<EmergencyIncident>" as IECIncident
+interface "IEntityTypeConfiguration<FallType>" as IECFallType
+interface "IEntityTypeConfiguration<EmergencyOutboxMessage>" as IECOutbox
+
+' =======================
+' CONFIGURATION (Options)
+' =======================
+class EmergencyAnalyticsMqttOptions <<options>> {
+    + String Host
+    + Int Port
+    + String ClientId
+    + String FallDetectedTopic
+    + String FallCancelledTopic
+    + String Username
+    + String Password
+    + Bool UseTls
+}
+
+' =======================
+' MESSAGING - MQTT PAYLOADS
+' =======================
+class MqttFallDetectedMessage <<message>> {
+    + Long DeviceId
+    + Short FallTypeId
+    + String FallType
+    + String FallTypeName
+    + Decimal AiConfidenceScore
+    + Decimal Latitude
+    + Decimal Longitude
+    + DateTime ReportedAtUtc
+}
+
+class MqttFallCancelledMessage <<message>> {
+    + Long DeviceId
+    + DateTime ReportedAtUtc
+    + String Reason
+}
+
+' =======================
+' MESSAGING - BACKGROUND SERVICES
+' =======================
+class EmergencyAnalyticsMqttSubscriberBackgroundService <<background service>> {
+    - IServiceScopeFactory _serviceScopeFactory
+    - ILogger _logger
+    - EmergencyAnalyticsMqttOptions _mqttOptions
+    - IMqttClient _mqttClient
+    --
+    # ExecuteAsync(stoppingToken: CancellationToken): Task
+    - HandleMessageAsync(eventArgs): Task
+}
+
+class EmergencyOutboxPublisherBackgroundService <<background service>> {
+    - IServiceScopeFactory _serviceScopeFactory
+    - ILogger _logger
+    - OutboxOptions _outboxOptions
+    --
+    # ExecuteAsync(stoppingToken: CancellationToken): Task
+}
+
+class BackgroundService
+
+' =======================
+' RELACIONES
+' =======================
+EmergencyIncidentRepository ..|> IEmergencyIncidentRepository
+EmergencyIncidentRepository --|> BaseRepositoryIncident
+
+FallTypeRepository ..|> IFallTypeRepository
+FallTypeRepository --|> BaseRepositoryFallType
+
+EmergencyOutboxMessageRepository ..|> IEmergencyOutboxMessageRepository
+EmergencyOutboxMessageRepository --|> BaseRepositoryOutbox
+
+EmergencyIncidentConfiguration ..|> IECIncident
+FallTypeConfiguration ..|> IECFallType
+EmergencyOutboxMessageConfiguration ..|> IECOutbox
+
+EmergencyAnalyticsMqttSubscriberBackgroundService --|> BackgroundService
+EmergencyOutboxPublisherBackgroundService --|> BackgroundService
+
+EmergencyAnalyticsMqttSubscriberBackgroundService --> EmergencyAnalyticsMqttOptions : usa
+EmergencyAnalyticsMqttSubscriberBackgroundService ..> MqttFallDetectedMessage : deserializa
+EmergencyAnalyticsMqttSubscriberBackgroundService ..> MqttFallCancelledMessage : deserializa
+EmergencyAnalyticsMqttSubscriberBackgroundService ..> IEmergencyIncidentCommandService : invoca
+
+EmergencyOutboxPublisherBackgroundService ..> IEmergencyOutboxMessageRepository : consulta
+
+@enduml

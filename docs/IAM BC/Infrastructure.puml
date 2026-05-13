@@ -1,0 +1,56 @@
+@startuml IAM_Infrastructure
+title IAM - Infrastructure Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS (referenciados)
+' =======================
+interface IUserRepository
+interface IHashingService
+interface ITokenService
+
+' =======================
+' PERSISTENCIA (EFC)
+' =======================
+class "BaseRepository<User>" as BaseRepositoryUser
+class "IEntityTypeConfiguration<User>" as IEntityTypeConfigurationUser <<interface>>
+
+class UserRepository {
+    - AppDbContext Context
+    --
+    + ExistsByEmailAsync(email: String): Task<bool>
+    + FindByEmailAsync(email: String): Task<User>
+}
+
+class UserConfiguration <<entity configuration>> {
+    + Configure(builder: EntityTypeBuilder<User>)
+}
+
+' =======================
+' SEGURIDAD / TOKENS
+' =======================
+class BcryptHashingService {
+    + HashPassword(password: String): String
+    + VerifyPassword(password: String, passwordHash: String): bool
+}
+
+class JwtTokenService {
+    - IConfiguration _configuration
+    --
+    + GenerateToken(user: User): String
+}
+
+' =======================
+' RELACIONES
+' =======================
+UserRepository ..|> IUserRepository
+UserRepository --|> BaseRepositoryUser
+
+UserConfiguration ..|> IEntityTypeConfigurationUser
+
+BcryptHashingService ..|> IHashingService
+JwtTokenService ..|> ITokenService
+
+@enduml

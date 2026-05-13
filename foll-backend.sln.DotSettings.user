@@ -1,0 +1,23 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=6fbb4052_002Dd053_002D442d_002Dae26_002D789039a33478/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Constructor_WithValidData_CreatesUserCorrectlyAndFormatsData" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;TestAncestor&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.UserTests.Constructor_WithValidData_CreatesUserCorrectlyAndFormatsData&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.UserTests.Constructor_WithEmptyEmail_ThrowsArgumentException&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.UserCommandServiceTests.Handle_WhenEmailDoesNotExist_RegistersUserAndSavesChanges&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.UserCommandServiceTests.Handle_WhenEmailAlreadyExists_ThrowsExceptionAndDoesNotSave&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.PatientCommandServiceTests.Handle_CreatePatient_WithValidRelationshipType_CreatesPatientAndSaves&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.PatientCommandServiceTests.Handle_CreatePatient_WithInvalidRelationshipType_ThrowsInvalidOperationException&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.EmergencyIncidentTests.CreateFallDetected_WithValidData_CreatesIncidentAndRaisesOpenedEvent&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.EmergencyIncidentTests.CreateFallDetected_WithInvalidDeviceId_ThrowsArgumentOutOfRangeException&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.EmergencyIncidentTests.Resolve_WhenIncidentIsOpen_UpdatesStateAndRaisesResolvedEvent&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.EmergencyIncidentTests.Resolve_WhenIncidentIsAlreadyClosed_ThrowsInvalidOperationException&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.UserIntegrationTests.RegisterUser_Integration_SavesCorrectlyInDatabase&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.AuthenticationControllerTests.Register_WithValidData_ReturnsOkOrCreated&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.AuthenticationControllerTests&lt;/TestId&gt;&#xD;
+  &lt;/TestAncestor&gt;&#xD;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=eeb675b3_002D9189_002D40f5_002Da85e_002D15c35da4d7dc/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Constructor_WithValidData_CreatesUserCorrectlyAndFormatsData #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;TestAncestor&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::AEFF75DC-698C-4605-8D39-A86FBD24A45F::net8.0::foll_backend_tets.UserTests.Constructor_WithValidData_CreatesUserCorrectlyAndFormatsData&lt;/TestId&gt;&#xD;
+  &lt;/TestAncestor&gt;&#xD;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

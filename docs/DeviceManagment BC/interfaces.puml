@@ -1,0 +1,52 @@
+@startuml DeviceManagment_Interfaces
+title DeviceManagment - Interfaces Layer (REST)
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS (referenciados)
+' =======================
+interface IDeviceCommandService
+interface IDeviceQueryService
+class DeviceMonitoringOptions <<options>>
+class AppDbContext
+
+' =======================
+' CONTROLLERS
+' =======================
+class DevicesController <<controller>> {
+    - IDeviceCommandService _commandService
+    - IDeviceQueryService _queryService
+    - DeviceMonitoringOptions _monitoringOptions
+    --
+    + Link(deviceId: Long, resource: LinkDeviceResource): Task<IActionResult>
+    + Unlink(deviceId: Long): Task<IActionResult>
+    + GetStatus(deviceId: Long): Task<IActionResult>
+    + GetByPatient(patientId: Long): Task<IActionResult>
+}
+
+class DeviceManagmentDebugController <<controller>> {
+    - AppDbContext _context
+    --
+    + GetEventsDashboard(): Task<ContentResult>
+}
+
+' =======================
+' RESOURCES (DTOs REST)
+' =======================
+class LinkDeviceResource <<resource>> {
+    - Long PatientId
+}
+
+' =======================
+' RELACIONES
+' =======================
+DevicesController --> IDeviceCommandService : usa
+DevicesController --> IDeviceQueryService : usa
+DevicesController --> DeviceMonitoringOptions : usa
+DevicesController ..> LinkDeviceResource : recibe
+
+DeviceManagmentDebugController --> AppDbContext : usa
+
+@enduml

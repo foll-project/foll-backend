@@ -1,0 +1,168 @@
+@startuml EmergencyAnalytics_Domain
+title EmergencyAnalytics - Domain Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' ENUMS
+' =======================
+enum EmergencyIncidentStatus {
+    Open
+    Cancelled
+    Resolved
+}
+
+enum EmergencyCancellationReason {
+    Unknown
+    UserButtonPressed
+    FalsePositive
+}
+
+' =======================
+' ENTIDADES
+' =======================
+class EmergencyIncident {
+    - Long EmergencyIncidentId
+    - Guid IncidentKey
+    - Long DeviceId
+    - Long PatientId
+    - Short FallTypeId
+    - FallType FallType
+    - EmergencyIncidentStatus Status
+    - DateTime OpenedAt
+    - DateTime LastSignalAt
+    - DateTime CancelledAt
+    - DateTime ResolvedAt
+    - DateTime ClosedAt
+    - Long ClosedByUserId
+    - Decimal AiConfidenceScore
+    - Decimal Latitude
+    - Decimal Longitude
+    - EmergencyCancellationReason CancellationReason
+    - String FinalObservation
+    - String LastSourcePayload
+    --
+    + {static} CreateFallDetected(deviceId: Long, patientId: Long, fallTypeId: Short, openedAtUtc: DateTime, aiConfidenceScore: Decimal, latitude: Decimal, longitude: Decimal, sourcePayload: String): EmergencyIncident
+    + RefreshDetection(fallTypeId: Short, reportedAtUtc: DateTime, aiConfidenceScore: Decimal, latitude: Decimal, longitude: Decimal, sourcePayload: String)
+    + Cancel(reason: EmergencyCancellationReason, cancelledAtUtc: DateTime, sourcePayload: String)
+    + MarkAsFalsePositive(actorUserId: Long, observation: String, markedAtUtc: DateTime)
+    + Resolve(actorUserId: Long, observation: String, resolvedAtUtc: DateTime)
+    + UpdateFinalObservation(actorUserId: Long, observation: String)
+}
+
+class FallType {
+    + {static} UnknownId: Short
+    - Short FallTypeId
+    - String Name
+    - String Description
+    - Short SeverityLevel
+}
+
+class EmergencyOutboxMessage {
+    - Long EmergencyOutboxMessageId
+    - String Type
+    - String Payload
+    - DateTime OccurredOn
+    - DateTime ProcessedOn
+    - String Error
+    - Int RetryCount
+    --
+    + {static} Create(type: String, message: TMessage, occurredOn: DateTime): EmergencyOutboxMessage
+    + MarkProcessed(processedOn: DateTime)
+    + MarkFailed(error: String)
+}
+
+' =======================
+' DOMAIN EVENTS
+' =======================
+class EmergencyIncidentOpenedDomainEvent <<domain event>> {
+    - Guid IncidentKey
+    - Long DeviceId
+    - Long PatientId
+    - Short FallTypeId
+    - DateTime OpenedAtUtc
+    - Decimal AiConfidenceScore
+    - Decimal Latitude
+    - Decimal Longitude
+    + DateTime OccurredOn
+}
+
+class EmergencyIncidentCancelledDomainEvent <<domain event>> {
+    - Guid IncidentKey
+    - Long DeviceId
+    - Long PatientId
+    - Short FallTypeId
+    - DateTime CancelledAtUtc
+    - EmergencyCancellationReason Reason
+    - Long ActorUserId
+    - String Observation
+    + DateTime OccurredOn
+}
+
+class EmergencyIncidentResolvedDomainEvent <<domain event>> {
+    - Guid IncidentKey
+    - Long DeviceId
+    - Long PatientId
+    - Short FallTypeId
+    - DateTime ResolvedAtUtc
+    - Long ActorUserId
+    - String Observation
+    + DateTime OccurredOn
+}
+
+' =======================
+' REPOSITORIOS / SERVICIOS DE DOMINIO
+' =======================
+interface IEmergencyIncidentRepository {
+    + FindLatestOpenByDeviceIdAsync(deviceId: Long): Task<EmergencyIncident>
+    + FindActiveByPatientIdAsync(patientId: Long): Task<EmergencyIncident>
+    + FindByIdWithFallTypeAsync(incidentId: Long): Task<EmergencyIncident>
+    + ListByPatientIdAsync(patientId: Long): Task<IReadOnlyCollection<EmergencyIncident>>
+    + FindByIdAsync(id: Long): Task<EmergencyIncident>
+    + AddAsync(incident: EmergencyIncident): Task
+    + Update(incident: EmergencyIncident)
+}
+
+interface IFallTypeRepository {
+    + FindByIdAsync(id: Short): Task<FallType>
+    + FindByNameAsync(name: String): Task<FallType>
+}
+
+interface IEmergencyOutboxMessageRepository {
+    + ListPendingAsync(batchSize: Int): Task<IReadOnlyCollection<EmergencyOutboxMessage>>
+    + AddAsync(message: EmergencyOutboxMessage): Task
+}
+
+interface IEmergencyIncidentCommandService {
+    + Handle(command: RegisterFallDetectedCommand): Task
+    + Handle(command: RegisterFallCancelledCommand): Task
+    + Handle(command: MarkFallIncidentFalsePositiveCommand): Task
+    + Handle(command: ResolveFallIncidentCommand): Task
+    + Handle(command: UpdateEmergencyIncidentObservationCommand): Task
+}
+
+interface IEmergencyIncidentQueryService {
+    + Handle(query: GetActiveFallIncidentByPatientIdQuery): Task<EmergencyIncident>
+    + Handle(query: GetEmergencyIncidentByIdQuery): Task<EmergencyIncident>
+    + Handle(query: ListFallIncidentHistoryByPatientIdQuery): Task<IReadOnlyCollection<EmergencyIncident>>
+}
+
+' =======================
+' RELACIONES
+' =======================
+EmergencyIncident --> EmergencyIncidentStatus : usa
+EmergencyIncident --> EmergencyCancellationReason : usa
+EmergencyIncident "*" --> "1" FallType : tipificado por
+
+EmergencyIncident ..> EmergencyIncidentOpenedDomainEvent : emite
+EmergencyIncident ..> EmergencyIncidentCancelledDomainEvent : emite
+EmergencyIncident ..> EmergencyIncidentResolvedDomainEvent : emite
+
+EmergencyIncidentCancelledDomainEvent --> EmergencyCancellationReason : usa
+
+IEmergencyIncidentRepository ..> EmergencyIncident : opera sobre
+IFallTypeRepository ..> FallType : opera sobre
+IEmergencyOutboxMessageRepository ..> EmergencyOutboxMessage : opera sobre
+
+@enduml

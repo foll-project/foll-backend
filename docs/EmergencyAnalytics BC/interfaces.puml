@@ -1,0 +1,48 @@
+@startuml EmergencyAnalytics_Interfaces
+title EmergencyAnalytics - Interfaces Layer (REST)
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS (referenciados)
+' =======================
+interface IEmergencyIncidentCommandService
+interface IEmergencyIncidentQueryService
+
+' =======================
+' CONTROLLERS
+' =======================
+class EmergencyIncidentsController <<controller>> {
+    - IEmergencyIncidentCommandService _commandService
+    - IEmergencyIncidentQueryService _queryService
+    --
+    + GetActiveByPatient(patientId: Long): Task<IActionResult>
+    + GetHistoryByPatient(patientId: Long): Task<IActionResult>
+    + GetById(incidentId: Long): Task<IActionResult>
+    + MarkFalsePositive(incidentId: Long, resource: CloseEmergencyIncidentResource): Task<IActionResult>
+    + Resolve(incidentId: Long, resource: CloseEmergencyIncidentResource): Task<IActionResult>
+    + UpdateObservation(incidentId: Long, resource: UpdateEmergencyIncidentObservationResource): Task<IActionResult>
+}
+
+' =======================
+' RESOURCES (DTOs REST)
+' =======================
+class CloseEmergencyIncidentResource <<resource>> {
+    - String Observation
+}
+
+class UpdateEmergencyIncidentObservationResource <<resource>> {
+    - String Observation
+}
+
+' =======================
+' RELACIONES
+' =======================
+EmergencyIncidentsController --> IEmergencyIncidentCommandService : usa
+EmergencyIncidentsController --> IEmergencyIncidentQueryService : usa
+
+EmergencyIncidentsController ..> CloseEmergencyIncidentResource : recibe
+EmergencyIncidentsController ..> UpdateEmergencyIncidentObservationResource : recibe
+
+@enduml

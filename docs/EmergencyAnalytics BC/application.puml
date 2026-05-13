@@ -1,0 +1,147 @@
+@startuml EmergencyAnalytics_Application
+title EmergencyAnalytics - Application Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS DEL DOMINIO (referenciados)
+' =======================
+interface IEmergencyIncidentCommandService
+interface IEmergencyIncidentQueryService
+interface IEmergencyIncidentRepository
+interface IFallTypeRepository
+interface IEmergencyOutboxMessageRepository
+
+' =======================
+' COMMAND / QUERY SERVICES
+' =======================
+class EmergencyIncidentCommandService {
+    - IEmergencyIncidentRepository _incidentRepository
+    - IFallTypeRepository _fallTypeRepository
+    - IEmergencyOutboxMessageRepository _outboxMessageRepository
+    - IDeviceIncidentAssignmentService _deviceIncidentAssignmentService
+    - IPatientIncidentAccessService _patientIncidentAccessService
+    - IUnitOfWork _unitOfWork
+    --
+    + Handle(command: RegisterFallDetectedCommand): Task
+    + Handle(command: RegisterFallCancelledCommand): Task
+    + Handle(command: MarkFallIncidentFalsePositiveCommand): Task
+    + Handle(command: ResolveFallIncidentCommand): Task
+    + Handle(command: UpdateEmergencyIncidentObservationCommand): Task
+}
+
+class EmergencyIncidentQueryService {
+    - IEmergencyIncidentRepository _incidentRepository
+    - IPatientIncidentAccessService _patientIncidentAccessService
+    --
+    + Handle(query: GetActiveFallIncidentByPatientIdQuery): Task<EmergencyIncident>
+    + Handle(query: GetEmergencyIncidentByIdQuery): Task<EmergencyIncident>
+    + Handle(query: ListFallIncidentHistoryByPatientIdQuery): Task<IReadOnlyCollection<EmergencyIncident>>
+}
+
+' =======================
+' OUTBOUND SERVICES (puertos hacia otros BCs)
+' =======================
+interface IDeviceIncidentAssignmentService {
+    + FindAssignedPatientIdAsync(deviceId: Long): Task<Long>
+}
+
+class DeviceIncidentAssignmentService {
+    - IDeviceAssignmentAcl _deviceAssignmentAcl
+    --
+    + FindAssignedPatientIdAsync(deviceId: Long): Task<Long>
+}
+
+interface IPatientIncidentAccessService {
+    + CanAccessIncidentAsync(actorUserId: Long, patientId: Long): Task<bool>
+}
+
+class PatientIncidentAccessService {
+    - IPatientEmergencyAcl _patientEmergencyAcl
+    --
+    + CanAccessIncidentAsync(actorUserId: Long, patientId: Long): Task<bool>
+}
+
+' =======================
+' INTEGRATION EVENTS (Outbox -> MediatR)
+' =======================
+class EmergencyIncidentOpenedIntegrationEvent <<integration event>> {
+    - Guid IncidentKey
+    - Long DeviceId
+    - Long PatientId
+    - Short FallTypeId
+    - String FallTypeName
+    - String FallTypeDescription
+    - Short SeverityLevel
+    - DateTime OpenedAtUtc
+    - Decimal AiConfidenceScore
+    - Decimal Latitude
+    - Decimal Longitude
+}
+
+class EmergencyIncidentClosedIntegrationEvent <<integration event>> {
+    - Guid IncidentKey
+    - Long DeviceId
+    - Long PatientId
+    - Short FallTypeId
+    - String FallTypeName
+    - String FallTypeDescription
+    - Short SeverityLevel
+    - EmergencyIncidentStatus Status
+    - DateTime ClosedAtUtc
+    - EmergencyCancellationReason CancellationReason
+    - Long ClosedByUserId
+    - String Observation
+}
+
+class EmergencyIncidentOpenedIntegrationEventHandler <<handler>> {
+    - ILogger _logger
+    --
+    + Handle(notification: EmergencyIncidentOpenedIntegrationEvent, ct: CancellationToken): Task
+}
+
+class EmergencyIncidentClosedIntegrationEventHandler <<handler>> {
+    - ILogger _logger
+    --
+    + Handle(notification: EmergencyIncidentClosedIntegrationEvent, ct: CancellationToken): Task
+}
+
+class EmergencyAnalyticsEventTypes <<constants>> {
+    + {static} IncidentOpenedV1: String
+    + {static} IncidentClosedV1: String
+}
+
+' =======================
+' RELACIONES
+' =======================
+EmergencyIncidentCommandService ..|> IEmergencyIncidentCommandService
+EmergencyIncidentQueryService ..|> IEmergencyIncidentQueryService
+
+EmergencyIncidentCommandService --> IEmergencyIncidentRepository : usa
+EmergencyIncidentCommandService --> IFallTypeRepository : usa
+EmergencyIncidentCommandService --> IEmergencyOutboxMessageRepository : usa
+EmergencyIncidentCommandService --> IDeviceIncidentAssignmentService : usa
+EmergencyIncidentCommandService --> IPatientIncidentAccessService : usa
+EmergencyIncidentCommandService --> IUnitOfWork : usa
+
+EmergencyIncidentQueryService --> IEmergencyIncidentRepository : usa
+EmergencyIncidentQueryService --> IPatientIncidentAccessService : usa
+
+DeviceIncidentAssignmentService ..|> IDeviceIncidentAssignmentService
+DeviceIncidentAssignmentService --> IDeviceAssignmentAcl : delega
+
+PatientIncidentAccessService ..|> IPatientIncidentAccessService
+PatientIncidentAccessService --> IPatientEmergencyAcl : delega
+
+EmergencyIncidentOpenedIntegrationEventHandler ..> EmergencyIncidentOpenedIntegrationEvent : maneja
+EmergencyIncidentClosedIntegrationEventHandler ..> EmergencyIncidentClosedIntegrationEvent : maneja
+
+EmergencyIncidentCommandService ..> EmergencyIncidentOpenedIntegrationEvent : publica
+EmergencyIncidentCommandService ..> EmergencyIncidentClosedIntegrationEvent : publica
+EmergencyIncidentCommandService ..> EmergencyAnalyticsEventTypes : usa
+
+EmergencyIncidentClosedIntegrationEvent --> EmergencyIncidentStatus : usa
+EmergencyIncidentClosedIntegrationEvent --> EmergencyCancellationReason : usa
+
+@enduml

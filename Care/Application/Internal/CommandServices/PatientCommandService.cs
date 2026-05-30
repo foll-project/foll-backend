@@ -37,7 +37,8 @@ public class PatientCommandService : IPatientCommandService
             command.BirthDate,
             command.ActorUserId,
             command.BloodType,
-            command.MedicalConditions);
+            command.MedicalConditions,
+            command.Medications); //AGREGFA
 
         patient.AddCaregiver(command.ActorUserId, command.RelationshipTypeId);
 
@@ -54,7 +55,7 @@ public class PatientCommandService : IPatientCommandService
         if (patient.OfficialGuardianUserId != command.ActorUserId)
             throw new InvalidOperationException("Solo el OficialGuardian puede actualizar el paciente.");
 
-        patient.UpdateBasicInfo(command.FirstName, command.LastName, command.BirthDate, command.BloodType, command.MedicalConditions);
+        patient.UpdateBasicInfo(command.FirstName, command.LastName, command.BirthDate, command.BloodType, command.MedicalConditions, command.Medications); //ACTUALIZA
 
         _patientRepository.Update(patient);
         await _unitOfWork.CompleteAsync();

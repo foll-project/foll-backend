@@ -10,4 +10,5 @@ public record CreatePatientCommand(
     DateOnly BirthDate,
     short RelationshipTypeId,
     BloodType BloodType,
-    Dictionary<string, string>? MedicalConditions);
+    Dictionary<string, string>? MedicalConditions,
+    Dictionary<string, string>? Medications); // <-- NUEVO

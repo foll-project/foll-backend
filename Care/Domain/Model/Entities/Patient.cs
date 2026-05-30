@@ -13,6 +13,7 @@ public class Patient
     public BloodType BloodType { get; private set; }
 
     public Dictionary<string, string> MedicalConditions { get; private set; }
+    public Dictionary<string, string> Medications { get; private set; } //AGREGADO
 
     public long? CurrentGuardianUserId { get; private set; }
     public long OfficialGuardianUserId { get; private set; }
@@ -27,6 +28,7 @@ public class Patient
         FirstName = string.Empty;
         LastName = string.Empty;
         MedicalConditions = new Dictionary<string, string>();
+        Medications = new Dictionary<string, string>(); //AGREGADO
         BloodType = BloodType.Unknown;
 
         Caregivers = new List<CaregiverRole>();
@@ -41,7 +43,8 @@ public class Patient
         DateOnly birthDate,
         long officialGuardianUserId,
         BloodType bloodType = BloodType.Unknown,
-        Dictionary<string, string>? medicalConditions = null)
+        Dictionary<string, string>? medicalConditions = null, 
+        Dictionary<string, string>? medications = null) //NUEVO
     {
         if (string.IsNullOrWhiteSpace(dni)) throw new ArgumentException("El DNI del paciente es obligatorio.", nameof(dni));
         if (string.IsNullOrWhiteSpace(firstName)) throw new ArgumentException("El nombre es obligatorio.", nameof(firstName));
@@ -54,6 +57,7 @@ public class Patient
         BirthDate = birthDate;
         BloodType = bloodType;
         MedicalConditions = medicalConditions ?? new Dictionary<string, string>();
+        Medications = medications ?? new Dictionary<string, string>(); // <-- ASIGNACION
 
         OfficialGuardianUserId = officialGuardianUserId;
         CurrentGuardianUserId = officialGuardianUserId;
@@ -85,7 +89,8 @@ public class Patient
         string lastName,
         DateOnly birthDate,
         BloodType bloodType,
-        Dictionary<string, string>? medicalConditions)
+        Dictionary<string, string>? medicalConditions,
+        Dictionary<string, string>? medications) // <-- AGREGAMOS
     {
         if (string.IsNullOrWhiteSpace(firstName)) throw new ArgumentException("El nombre es obligatorio.", nameof(firstName));
         if (string.IsNullOrWhiteSpace(lastName)) throw new ArgumentException("El apellido es obligatorio.", nameof(lastName));
@@ -95,6 +100,7 @@ public class Patient
         BirthDate = birthDate;
         BloodType = bloodType;
         MedicalConditions = medicalConditions ?? new Dictionary<string, string>();
+        Medications = medications ?? new Dictionary<string, string>(); // <-- ASIGNACIÓN
     }
 
     public void AddCaregiver(long userId, short relationshipTypeId)

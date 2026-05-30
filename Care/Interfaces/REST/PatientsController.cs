@@ -43,7 +43,8 @@ public class PatientsController : ControllerBase
                 resource.BirthDate,
                 resource.RelationshipTypeId,
                 resource.BloodType,
-                resource.MedicalConditions));
+                resource.MedicalConditions,
+                resource.Medications));
 
             var created = await _queryService.Handle(new GetPatientByIdQuery(userId, id));
             if (created is null) return Ok(new { patientId = id });
@@ -86,7 +87,8 @@ public class PatientsController : ControllerBase
                 resource.LastName,
                 resource.BirthDate,
                 resource.BloodType,
-                resource.MedicalConditions));
+                resource.MedicalConditions,
+                resource.Medications));
 
             return Ok(new { message = "Paciente actualizado." });
         }
@@ -263,6 +265,7 @@ public class PatientsController : ControllerBase
             patient.BirthDate,
             patient.BloodType,
             patient.MedicalConditions,
+            patient.Medications, //
             patient.CurrentGuardianUserId,
             patient.OfficialGuardianUserId,
             caregivers = await BuildCaregiverResponsesAsync(patient.Caregivers, patient.OfficialGuardianUserId),

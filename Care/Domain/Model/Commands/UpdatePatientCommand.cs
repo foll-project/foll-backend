@@ -9,4 +9,5 @@ public record UpdatePatientCommand(
     string LastName,
     DateOnly BirthDate,
     BloodType BloodType,
-    Dictionary<string, string>? MedicalConditions);
+    Dictionary<string, string>? MedicalConditions,
+    Dictionary<string, string>? Medications); //SIGUE LA SECUENCIA

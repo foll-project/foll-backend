@@ -7,4 +7,5 @@ public record UpdatePatientResource(
     string LastName,
     DateOnly BirthDate,
     BloodType BloodType,
-    Dictionary<string, string>? MedicalConditions);
+    Dictionary<string, string>? MedicalConditions,
+    Dictionary<string, string>? Medications);//NUEVO

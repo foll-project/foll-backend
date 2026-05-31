@@ -168,6 +168,51 @@ public class PatientsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+    
+    [HttpPost("{id:long}/annotations")]
+    public async Task<IActionResult> AddAnnotation([FromRoute] long id, [FromBody] AddPatientAnnotationResource resource)
+    {
+        var userId = GetUserIdOrThrow();
+        try
+        {
+            await _commandService.Handle(new AddPatientAnnotationCommand(userId, id, resource.Content));
+            return Ok(new { message = "Anotación guardada exitosamente." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+    
+    [HttpGet("{id:long}/annotations")]
+    public async Task<IActionResult> GetAnnotations([FromRoute] long id)
+    {
+        var userId = GetUserIdOrThrow();
+        try
+        {
+            var annotations = (await _queryService.Handle(new GetPatientAnnotationsQuery(userId, id))).ToList();
+        
+            // Mapeamos para enviar el nombre del autor y cumplir el contrato del front
+            var result = new List<object>();
+            foreach (var ann in annotations)
+            {
+                var user = await _userInfoService.FindByIdAsync(ann.AuthorUserId);
+                result.Add(new
+                {
+                    id = ann.PatientAnnotationId.ToString(),
+                    date = ann.CreatedAt.ToString("o"), // Formato ISO 8601
+                    text = ann.Content,
+                    author = user != null ? $"{user.FirstName} {user.LastName}" : "Usuario Desconocido"
+                });
+            }
+        
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
     [HttpPost("{dni}/invitations")]
     public async Task<IActionResult> CreateInvitation([FromRoute] string dni, [FromBody] CreateInvitationResource resource)

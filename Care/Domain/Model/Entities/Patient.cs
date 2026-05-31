@@ -21,6 +21,8 @@ public class Patient
     public List<CaregiverRole> Caregivers { get; private set; }
     public List<EmergencyContact> EmergencyContacts { get; private set; }
     public List<PatientInvitation> Invitations { get; private set; }
+    
+    public List<PatientAnnotation> Annotations { get; private set; }
 
     protected Patient()
     {
@@ -34,6 +36,7 @@ public class Patient
         Caregivers = new List<CaregiverRole>();
         EmergencyContacts = new List<EmergencyContact>();
         Invitations = new List<PatientInvitation>();
+        Annotations = new List<PatientAnnotation>();
     }
 
     public Patient(
@@ -65,6 +68,7 @@ public class Patient
         Caregivers = new List<CaregiverRole>();
         EmergencyContacts = new List<EmergencyContact>();
         Invitations = new List<PatientInvitation>();
+        Annotations = new List<PatientAnnotation>();
     }
 
     public void AssignGuardShift(long newCurrentGuardianUserId, long actorUserId)
@@ -128,6 +132,16 @@ public class Patient
 
         EmergencyContacts.Add(new EmergencyContact(fullName.Trim(), phoneNumber.Trim(), relationship.Trim()));
     }
+    
+    public void AddAnnotation(long authorUserId, string content)
+    {
+        
+        if (authorUserId != OfficialGuardianUserId && !Caregivers.Any(c => c.UserId == authorUserId))
+            throw new InvalidOperationException("Solo los cuidadores asignados pueden dejar anotaciones.");
+
+        Annotations.Add(new PatientAnnotation(PatientId, authorUserId, content));
+    }
+    
 
     public void RemoveEmergencyContact(long emergencyContactId)
     {

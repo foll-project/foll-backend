@@ -82,6 +82,18 @@ public class PatientCommandService : IPatientCommandService
         _patientRepository.Update(patient);
         await _unitOfWork.CompleteAsync();
     }
+    
+    public async Task Handle(AddPatientAnnotationCommand command)
+    {
+        var patient = await _patientRepository.FindByIdAsync(command.PatientId);
+        if (patient is null) throw new InvalidOperationException("Paciente no encontrado.");
+
+        // Llama al método de la entidad
+        patient.AddAnnotation(command.ActorUserId, command.Content);
+
+        _patientRepository.Update(patient);
+        await _unitOfWork.CompleteAsync();
+    }
 
     public async Task<long> Handle(AddEmergencyContactCommand command)
     {

@@ -83,5 +83,10 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
             .WithOne()
             .HasForeignKey(c => c.PatientId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasMany(p => p.Annotations)
+            .WithOne()
+            .HasForeignKey(a => a.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

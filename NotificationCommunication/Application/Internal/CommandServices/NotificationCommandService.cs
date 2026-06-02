@@ -35,52 +35,63 @@ public class NotificationCommandService : INotificationCommandService
 
     public async Task<long> Handle(CreateNotificationFromEventCommand command)
     {
-        var recipient = await _patientNotificationAccessService.GetRecipientForPatientAsync(command.PatientId);
-        if (recipient is null)
+        var recipients = await _patientNotificationAccessService.GetRecipientsForPatientAsync(command.PatientId);
+        if (recipients.Count == 0)
             throw new InvalidOperationException("No se encontro destinatario para la notificacion del paciente.");
 
-        var notification = new NotificationLog(
-            recipient.UserId,
-            command.NotificationType,
-            NotificationChannel.Push,
-            command.Title,
-            command.Body,
-            command.DataJson,
-            command.DeviceEventId,
-            command.PatientId,
-            command.DeviceId,
-            DateTime.UtcNow);
-
-        await _notificationLogRepository.AddAsync(notification);
-
-        var tokens = await _userPushTokenRepository.ListActiveByUserIdAsync(recipient.UserId);
-        if (tokens.Count == 0)
+        var notifications = new List<NotificationLog>();
+        foreach (var recipient in recipients)
         {
-            notification.MarkFailed("No hay tokens push activos para el cuidador.", DateTime.UtcNow);
-            await _unitOfWork.CompleteAsync();
-            return notification.NotificationLogId;
-        }
+            var notification = new NotificationLog(
+                recipient.UserId,
+                command.NotificationType,
+                NotificationChannel.Push,
+                command.Title,
+                command.Body,
+                command.DataJson,
+                command.DeviceEventId,
+                command.PatientId,
+                command.DeviceId,
+                DateTime.UtcNow);
 
-        var result = await _pushNotificationSender.SendAsync(new PushNotificationRequest(
-            recipient.UserId,
-            tokens.Select(t => t.Token).ToList(),
-            command.Title,
-            command.Body,
-            ParseData(command.DataJson)));
+            notifications.Add(notification);
+            await _notificationLogRepository.AddAsync(notification);
 
-        if (result.Success)
-        {
-            notification.MarkSent(result.ProviderMessageId, DateTime.UtcNow);
-            foreach (var token in tokens)
-                token.MarkUsed(DateTime.UtcNow);
-        }
-        else
-        {
-            notification.MarkFailed(result.ErrorMessage ?? "Error enviando push notification.", DateTime.UtcNow);
+            var tokens = await _userPushTokenRepository.ListActiveByUserIdAsync(recipient.UserId);
+            if (tokens.Count == 0)
+            {
+                notification.MarkFailed("No hay tokens push activos para el cuidador.", DateTime.UtcNow);
+                continue;
+            }
+
+            try
+            {
+                var result = await _pushNotificationSender.SendAsync(new PushNotificationRequest(
+                    recipient.UserId,
+                    tokens.Select(t => t.Token).ToList(),
+                    command.Title,
+                    command.Body,
+                    ParseData(command.DataJson)));
+
+                if (result.Success)
+                {
+                    notification.MarkSent(result.ProviderMessageId, DateTime.UtcNow);
+                    foreach (var token in tokens)
+                        token.MarkUsed(DateTime.UtcNow);
+                }
+                else
+                {
+                    notification.MarkFailed(result.ErrorMessage ?? "Error enviando push notification.", DateTime.UtcNow);
+                }
+            }
+            catch (Exception exception)
+            {
+                notification.MarkFailed(exception.Message, DateTime.UtcNow);
+            }
         }
 
         await _unitOfWork.CompleteAsync();
-        return notification.NotificationLogId;
+        return notifications[0].NotificationLogId;
     }
 
     public async Task Handle(MarkNotificationReadCommand command)

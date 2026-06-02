@@ -12,17 +12,37 @@ public class PatientNotificationAccessService : IPatientNotificationAccessServic
         _patientNotificationAcl = patientNotificationAcl;
     }
 
-    public async Task<PatientNotificationRecipientDto?> GetRecipientForPatientAsync(long patientId)
+    public async Task<IReadOnlyCollection<PatientNotificationRecipientDto>> GetRecipientsForPatientAsync(long patientId)
     {
-        if (patientId <= 0) return null;
+        if (patientId <= 0) return Array.Empty<PatientNotificationRecipientDto>();
 
         var access = await _patientNotificationAcl.GetPatientNotificationAccessByIdAsync(patientId);
-        if (access is null) return null;
+        if (access is null) return Array.Empty<PatientNotificationRecipientDto>();
 
-        var recipientUserId = access.CurrentGuardianUserId is > 0
-            ? access.CurrentGuardianUserId.Value
-            : access.OfficialGuardianUserId;
+        var caregiverUserIds = access.CaregiverUserIds
+            .Where(userId => userId > 0)
+            .ToHashSet();
 
-        return recipientUserId <= 0 ? null : new PatientNotificationRecipientDto(access.PatientId, recipientUserId);
+        var recipientUserIds = new List<long>();
+        if (access.OfficialGuardianUserId > 0)
+            recipientUserIds.Add(access.OfficialGuardianUserId);
+
+        recipientUserIds.AddRange(caregiverUserIds);
+
+        if (access.CurrentGuardianUserId is > 0)
+        {
+            var currentGuardianUserId = access.CurrentGuardianUserId.Value;
+            var isAuthorized = currentGuardianUserId == access.OfficialGuardianUserId ||
+                               caregiverUserIds.Contains(currentGuardianUserId);
+
+            if (isAuthorized)
+                recipientUserIds.Add(currentGuardianUserId);
+        }
+
+        return recipientUserIds
+            .Where(userId => userId > 0)
+            .Distinct()
+            .Select(userId => new PatientNotificationRecipientDto(access.PatientId, userId))
+            .ToList();
     }
 }

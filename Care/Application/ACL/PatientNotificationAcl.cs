@@ -21,6 +21,7 @@ public class PatientNotificationAcl : IPatientNotificationAcl
         return new PatientNotificationAccessDto(
             patient.PatientId,
             patient.OfficialGuardianUserId,
-            patient.CurrentGuardianUserId);
+            patient.CurrentGuardianUserId,
+            patient.Caregivers.Select(c => c.UserId).ToArray());
     }
 }

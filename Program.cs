@@ -19,6 +19,15 @@ using foll_backend.DeviceManagment.Domain.Services;
 using foll_backend.DeviceManagment.Infrastructure.Configuration;
 using foll_backend.DeviceManagment.Infrastructure.Messaging;
 using foll_backend.DeviceManagment.Infrastructure.Persistence.EFC.Repositories;
+using foll_backend.EmergencyAnalytics.Application.ACL;
+using foll_backend.EmergencyAnalytics.Application.Internal.CommandServices;
+using foll_backend.EmergencyAnalytics.Application.Internal.QueryServices;
+using foll_backend.EmergencyAnalytics.Application.OutboundServices;
+using foll_backend.EmergencyAnalytics.Domain.Repositories;
+using foll_backend.EmergencyAnalytics.Domain.Services;
+using foll_backend.EmergencyAnalytics.Infrastructure.Configuration;
+using foll_backend.EmergencyAnalytics.Infrastructure.Messaging;
+using foll_backend.EmergencyAnalytics.Infrastructure.Persistence.EFC.Repositories;
 using foll_backend.IAM.Application.Internal.CommandServices;
 using foll_backend.IAM.Application.Internal.QueryServices;
 using foll_backend.IAM.Application.OutboundServices;
@@ -36,14 +45,14 @@ using foll_backend.NotificationCommunication.Domain.Repositories;
 using foll_backend.NotificationCommunication.Domain.Services;
 using foll_backend.NotificationCommunication.Infrastructure.Persistence.EFC.Repositories;
 using foll_backend.Shared.Domain.Repositories;
+using foll_backend.Shared.Infrastructure.Configuration;
 using foll_backend.Shared.Infrastructure.Persistence.EFC.Configuration;
 using foll_backend.Shared.Infrastructure.Persistence.EFC.Repositories;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using foll_backend.Shared.Infrastructure.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,8 +65,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(connectionString)
-        .UseSnakeCaseNamingConvention()
-        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+        .UseSnakeCaseNamingConvention();
 });
 
 builder.Services.AddControllers();
@@ -66,6 +74,7 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 
 builder.Services.Configure<MqttOptions>(builder.Configuration.GetSection("Mqtt"));
 builder.Services.Configure<DeviceMonitoringOptions>(builder.Configuration.GetSection("DeviceMonitoring"));
+builder.Services.Configure<EmergencyAnalyticsMqttOptions>(builder.Configuration.GetSection("EmergencyAnalyticsMqtt"));
 builder.Services.Configure<OutboxOptions>(builder.Configuration.GetSection("Outbox"));
 builder.Services.Configure<NotificationOptions>(builder.Configuration.GetSection("Notifications"));
 builder.Services.Configure<FirebaseOptions>(builder.Configuration.GetSection("Firebase"));
@@ -131,6 +140,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserInfoAcl, UserInfoAcl>();
 builder.Services.AddScoped<IPatientDeviceAcl, PatientDeviceAcl>();
 builder.Services.AddScoped<IPatientNotificationAcl, PatientNotificationAcl>();
+builder.Services.AddScoped<IPatientEmergencyAcl, PatientEmergencyAcl>();
 
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
@@ -171,9 +181,19 @@ builder.Services.AddScoped<IPushNotificationSender>(serviceProvider =>
 });
 builder.Services.AddScoped<ISmsNotificationSender, FakeSmsNotificationSender>();
 
+builder.Services.AddScoped<IEmergencyIncidentRepository, EmergencyIncidentRepository>();
+builder.Services.AddScoped<IFallTypeRepository, FallTypeRepository>();
+builder.Services.AddScoped<IEmergencyOutboxMessageRepository, EmergencyOutboxMessageRepository>();
+builder.Services.AddScoped<IDeviceIncidentAssignmentService, DeviceIncidentAssignmentService>();
+builder.Services.AddScoped<IPatientIncidentAccessService, PatientIncidentAccessService>();
+builder.Services.AddScoped<IEmergencyIncidentCommandService, EmergencyIncidentCommandService>();
+builder.Services.AddScoped<IEmergencyIncidentQueryService, EmergencyIncidentQueryService>();
+
 builder.Services.AddHostedService<MqttHeartbeatSubscriberBackgroundService>();
 builder.Services.AddHostedService<DeviceConnectivityMonitorBackgroundService>();
+builder.Services.AddHostedService<EmergencyAnalyticsMqttSubscriberBackgroundService>();
 builder.Services.AddHostedService<OutboxPublisherBackgroundService>();
+builder.Services.AddHostedService<EmergencyOutboxPublisherBackgroundService>();
 
 var app = builder.Build();
 

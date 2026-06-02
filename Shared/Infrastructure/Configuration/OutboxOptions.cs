@@ -1,4 +1,4 @@
-namespace foll_backend.DeviceManagment.Infrastructure.Configuration;
+namespace foll_backend.Shared.Infrastructure.Configuration;
 
 public class OutboxOptions
 {

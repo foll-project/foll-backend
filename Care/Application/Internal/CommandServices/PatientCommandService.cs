@@ -37,7 +37,8 @@ public class PatientCommandService : IPatientCommandService
             command.BirthDate,
             command.ActorUserId,
             command.BloodType,
-            command.MedicalConditions);
+            command.MedicalConditions,
+            command.Medications); //AGREGFA
 
         patient.AddCaregiver(command.ActorUserId, command.RelationshipTypeId);
 
@@ -54,7 +55,7 @@ public class PatientCommandService : IPatientCommandService
         if (patient.OfficialGuardianUserId != command.ActorUserId)
             throw new InvalidOperationException("Solo el OficialGuardian puede actualizar el paciente.");
 
-        patient.UpdateBasicInfo(command.FirstName, command.LastName, command.BirthDate, command.BloodType, command.MedicalConditions);
+        patient.UpdateBasicInfo(command.FirstName, command.LastName, command.BirthDate, command.BloodType, command.MedicalConditions, command.Medications); //ACTUALIZA
 
         _patientRepository.Update(patient);
         await _unitOfWork.CompleteAsync();
@@ -77,6 +78,18 @@ public class PatientCommandService : IPatientCommandService
         if (patient is null) throw new InvalidOperationException("Paciente no encontrado.");
 
         patient.RestoreGuardShift(command.ActorUserId);
+
+        _patientRepository.Update(patient);
+        await _unitOfWork.CompleteAsync();
+    }
+    
+    public async Task Handle(AddPatientAnnotationCommand command)
+    {
+        var patient = await _patientRepository.FindByIdAsync(command.PatientId);
+        if (patient is null) throw new InvalidOperationException("Paciente no encontrado.");
+
+        // Llama al método de la entidad
+        patient.AddAnnotation(command.ActorUserId, command.Content);
 
         _patientRepository.Update(patient);
         await _unitOfWork.CompleteAsync();

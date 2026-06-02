@@ -1,0 +1,154 @@
+@startuml DeviceManagment_Domain
+title DeviceManagment - Domain Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' ENUMS
+' =======================
+enum DeviceStatus {
+    Active
+    Lost
+    InRepair
+}
+
+enum ConnectivityStatus {
+    Connected
+    Disconnected
+}
+
+enum ConnectivityChangeCause {
+    HeartbeatTimeout
+    PowerOff
+    HeartbeatReceived
+    PowerOn
+}
+
+enum DeviceEventType {
+    LowBatteryDetected
+    DeviceDisconnected
+}
+
+' =======================
+' ENTIDADES
+' =======================
+class Device {
+    - Long DeviceId
+    - Long AssignedPatientId
+    - String FirmwareVersion
+    - DeviceStatus Status
+    - ConnectivityStatus ConnectivityStatus
+    - Short CurrentBatteryLevel
+    - Bool IsCharging
+    - DateTime LastHeartbeatAt
+    - DateTime MonitoringStartedAt
+    - DateTime LastConnectivityChangeAt
+    --
+    + AssignToPatient(patientId: Long, monitoringStartedAtUtc: DateTime)
+    + Unassign()
+    + UpdateFirmware(firmwareVersion: String)
+    + RegisterTelemetry(batteryLevel: Short, isCharging: Bool, reportedAtUtc: DateTime, lowBatteryThreshold: Short)
+    + CheckConnectivity(detectedAtUtc: DateTime, offlineThreshold: TimeSpan)
+    + UpdatePowerState(isActive: Bool, reportedAtUtc: DateTime)
+}
+
+class DeviceEvent {
+    - Long DeviceEventId
+    - Long DeviceId
+    - DeviceEventType EventType
+    - String EventPayload
+    - Bool IsResolved
+    - DateTime CreatedAt
+    - DateTime ResolvedAt
+    --
+    + {static} CreateLowBatteryDetected(deviceId: Long, batteryLevel: Short, reportedAtUtc: DateTime): DeviceEvent
+    + {static} CreateDeviceDisconnected(deviceId: Long, detectedAtUtc: DateTime, lastSeenAtUtc: DateTime, cause: ConnectivityChangeCause): DeviceEvent
+    + Resolve(resolvedAt: DateTime)
+}
+
+' =======================
+' DOMAIN EVENTS
+' =======================
+class LowBatteryDetectedDomainEvent <<domain event>> {
+    - Long DeviceId
+    - Long AssignedPatientId
+    - Short BatteryLevel
+    - DateTime ReportedAtUtc
+    + DateTime OccurredOn
+}
+
+class LowBatteryResolvedDomainEvent <<domain event>> {
+    - Long DeviceId
+    - Long AssignedPatientId
+    - Short BatteryLevel
+    - DateTime ReportedAtUtc
+    + DateTime OccurredOn
+}
+
+class DeviceDisconnectedDomainEvent <<domain event>> {
+    - Long DeviceId
+    - Long AssignedPatientId
+    - DateTime DetectedAtUtc
+    - DateTime LastSeenAtUtc
+    - ConnectivityChangeCause Cause
+    + DateTime OccurredOn
+}
+
+class DeviceReconnectedDomainEvent <<domain event>> {
+    - Long DeviceId
+    - Long AssignedPatientId
+    - DateTime ReportedAtUtc
+    - ConnectivityChangeCause Cause
+    + DateTime OccurredOn
+}
+
+' =======================
+' REPOSITORIOS / SERVICIOS DE DOMINIO
+' =======================
+interface IDeviceRepository {
+    + FindByAssignedPatientIdAsync(patientId: Long): Task<Device>
+    + ListMonitoredActiveDeviceIdsAsync(): Task<IReadOnlyCollection<Long>>
+    + FindByIdAsync(id: Long): Task<Device>
+    + Update(device: Device)
+}
+
+interface IDeviceEventRepository {
+    + FindLatestUnresolvedByDeviceIdAndTypeAsync(deviceId: Long, eventType: DeviceEventType): Task<DeviceEvent>
+    + AddAsync(deviceEvent: DeviceEvent): Task
+}
+
+interface IDeviceCommandService {
+    + Handle(command: LinkDeviceCommand): Task
+    + Handle(command: UnlinkDeviceCommand): Task
+    + Handle(command: RegisterDeviceTelemetryCommand): Task
+    + Handle(command: CheckDeviceConnectivityCommand): Task
+    + Handle(command: UpdateDevicePowerStateCommand): Task
+}
+
+interface IDeviceQueryService {
+    + Handle(query: GetDeviceStatusByIdQuery): Task<Device>
+    + Handle(query: GetDeviceByPatientIdQuery): Task<Device>
+}
+
+' =======================
+' RELACIONES
+' =======================
+Device --> DeviceStatus : usa
+Device --> ConnectivityStatus : usa
+DeviceEvent --> DeviceEventType : usa
+
+Device ..> DeviceEvent : referencia por DeviceId
+
+Device ..> LowBatteryDetectedDomainEvent : emite
+Device ..> LowBatteryResolvedDomainEvent : emite
+Device ..> DeviceDisconnectedDomainEvent : emite
+Device ..> DeviceReconnectedDomainEvent : emite
+
+DeviceDisconnectedDomainEvent --> ConnectivityChangeCause : usa
+DeviceReconnectedDomainEvent --> ConnectivityChangeCause : usa
+
+IDeviceRepository ..> Device : opera sobre
+IDeviceEventRepository ..> DeviceEvent : opera sobre
+
+@enduml

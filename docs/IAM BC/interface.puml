@@ -1,0 +1,84 @@
+@startuml IAM_Interfaces
+title IAM - Interfaces Layer (REST)
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS (referenciados)
+' =======================
+interface IUserCommandService
+interface IUserQueryService
+class RegisterCommand <<command>>
+class LoginQuery <<query>>
+class User
+
+' =======================
+' CONTROLLER
+' =======================
+class AuthenticationController <<controller>> {
+    - IUserCommandService _userCommandService
+    - IUserQueryService _userQueryService
+    --
+    + Register(resource: RegisterResource): Task<IActionResult>
+    + Login(request: LoginRequest): Task<IActionResult>
+}
+
+' =======================
+' RESOURCES (DTOs REST)
+' =======================
+class RegisterResource <<resource>> {
+    - String Email
+    - String Password
+    - String FirstName
+    - String LastName
+    - String PhoneNumber
+}
+
+class LoginRequest <<resource>> {
+    - String Email
+    - String Password
+}
+
+class LoginResponse <<resource>> {
+    - Long UserId
+    - String Email
+    - String FirstName
+    - String LastName
+    - String PhoneNumber
+    - String Token
+}
+
+' =======================
+' ASSEMBLERS (Transform)
+' =======================
+class RegisterCommandFromResourceAssembler <<assembler>> {
+    + {static} ToCommandFromResource(resource: RegisterResource): RegisterCommand
+}
+
+class LoginQueryFromRequestAssembler <<assembler>> {
+    + {static} ToQuery(request: LoginRequest): LoginQuery
+    + {static} ToResponse(user: User, token: String): LoginResponse
+}
+
+' =======================
+' RELACIONES
+' =======================
+AuthenticationController --> IUserCommandService : usa
+AuthenticationController --> IUserQueryService : usa
+
+AuthenticationController ..> RegisterResource : recibe
+AuthenticationController ..> LoginRequest : recibe
+AuthenticationController ..> LoginResponse : retorna
+
+AuthenticationController ..> RegisterCommandFromResourceAssembler : usa
+AuthenticationController ..> LoginQueryFromRequestAssembler : usa
+
+RegisterCommandFromResourceAssembler ..> RegisterResource : transforma
+RegisterCommandFromResourceAssembler ..> RegisterCommand : produce
+
+LoginQueryFromRequestAssembler ..> LoginRequest : transforma
+LoginQueryFromRequestAssembler ..> LoginQuery : produce
+LoginQueryFromRequestAssembler ..> LoginResponse : produce
+
+@enduml

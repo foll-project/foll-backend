@@ -14,4 +14,5 @@ public interface IPatientQueryService
 
     Task<IEnumerable<PatientInvitation>> Handle(GetInvitationsByPatientDniQuery query);
     Task<PatientInvitation?> Handle(GetInvitationByIdQuery query);
+    Task<IEnumerable<PatientAnnotation>> Handle(GetPatientAnnotationsQuery query);
 }

@@ -1,0 +1,139 @@
+@startuml DeviceManagment_Infrastructure
+title DeviceManagment - Infrastructure Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS (referenciados)
+' =======================
+interface IDeviceRepository
+interface IDeviceEventRepository
+interface IDeviceCommandService
+
+class "BaseRepository<Device>" as BaseRepositoryDevice
+class "BaseRepository<DeviceEvent>" as BaseRepositoryDeviceEvent
+
+' =======================
+' PERSISTENCIA - REPOSITORIES (EFC)
+' =======================
+class DeviceRepository {
+    + DeviceRepository(context: AppDbContext)
+    + FindByAssignedPatientIdAsync(patientId: Long): Task<Device>
+    + ListMonitoredActiveDeviceIdsAsync(): Task<IReadOnlyCollection<Long>>
+}
+
+class DeviceEventRepository {
+    + DeviceEventRepository(context: AppDbContext)
+    + FindLatestUnresolvedByDeviceIdAndTypeAsync(deviceId: Long, eventType: DeviceEventType): Task<DeviceEvent>
+}
+
+' =======================
+' PERSISTENCIA - ENTITY CONFIGURATIONS
+' =======================
+class DeviceConfiguration <<entity configuration>> {
+    + Configure(builder: EntityTypeBuilder<Device>)
+}
+
+class DeviceEventConfiguration <<entity configuration>> {
+    + Configure(builder: EntityTypeBuilder<DeviceEvent>)
+}
+
+interface "IEntityTypeConfiguration<Device>" as IECDevice
+interface "IEntityTypeConfiguration<DeviceEvent>" as IECDeviceEvent
+
+' =======================
+' CONFIGURATION (Options)
+' =======================
+class MqttOptions <<options>> {
+    + String Host
+    + Int Port
+    + String ClientId
+    + String HeartbeatTopic
+    + String PowerTopic
+    + String Username
+    + String Password
+    + Bool UseTls
+}
+
+class DeviceMonitoringOptions <<options>> {
+    + Short LowBatteryThreshold
+    + Int ExpectedHeartbeatIntervalSeconds
+    + Int MissedHeartbeatsBeforeDisconnect
+    + Int ConnectivityCheckIntervalSeconds
+}
+
+' =======================
+' MESSAGING - MQTT PAYLOADS
+' =======================
+class MqttHeartbeatMessage <<message>> {
+    + Long DeviceId
+    + Short BatteryLevel
+    + Bool IsCharging
+    + DateTime ReportedAtUtc
+    + String FirmwareVersion
+}
+
+class MqttPowerMessage <<message>> {
+    + Long DeviceId
+    + Bool IsActive
+    + DateTime ReportedAtUtc
+}
+
+' =======================
+' MESSAGING - BACKGROUND SERVICES
+' =======================
+class MqttHeartbeatSubscriberBackgroundService <<background service>> {
+    - IServiceScopeFactory _serviceScopeFactory
+    - ILogger _logger
+    - MqttOptions _mqttOptions
+    - IMqttClient _mqttClient
+    --
+    # ExecuteAsync(stoppingToken: CancellationToken): Task
+    - HandleMessageAsync(eventArgs, ct: CancellationToken): Task
+}
+
+class DeviceConnectivityMonitorBackgroundService <<background service>> {
+    - IServiceScopeFactory _serviceScopeFactory
+    - ILogger _logger
+    - DeviceMonitoringOptions _monitoringOptions
+    --
+    # ExecuteAsync(stoppingToken: CancellationToken): Task
+}
+
+class OutboxPublisherBackgroundService <<background service>> {
+    - IServiceScopeFactory _serviceScopeFactory
+    - ILogger _logger
+    - OutboxOptions _outboxOptions
+    --
+    # ExecuteAsync(stoppingToken: CancellationToken): Task
+}
+
+class BackgroundService
+
+' =======================
+' RELACIONES
+' =======================
+DeviceRepository ..|> IDeviceRepository
+DeviceRepository --|> BaseRepositoryDevice
+
+DeviceEventRepository ..|> IDeviceEventRepository
+DeviceEventRepository --|> BaseRepositoryDeviceEvent
+
+DeviceConfiguration ..|> IECDevice
+DeviceEventConfiguration ..|> IECDeviceEvent
+
+MqttHeartbeatSubscriberBackgroundService --|> BackgroundService
+DeviceConnectivityMonitorBackgroundService --|> BackgroundService
+OutboxPublisherBackgroundService --|> BackgroundService
+
+MqttHeartbeatSubscriberBackgroundService --> MqttOptions : usa
+MqttHeartbeatSubscriberBackgroundService ..> MqttHeartbeatMessage : deserializa
+MqttHeartbeatSubscriberBackgroundService ..> MqttPowerMessage : deserializa
+MqttHeartbeatSubscriberBackgroundService ..> IDeviceCommandService : invoca
+
+DeviceConnectivityMonitorBackgroundService --> DeviceMonitoringOptions : usa
+DeviceConnectivityMonitorBackgroundService ..> IDeviceRepository : consulta
+DeviceConnectivityMonitorBackgroundService ..> IDeviceCommandService : invoca
+
+@enduml

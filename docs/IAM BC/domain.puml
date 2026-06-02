@@ -1,0 +1,66 @@
+@startuml IAM_Domain
+title IAM - Domain Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' ENTIDADES
+' =======================
+class User {
+    - Long UserId
+    - String Email
+    - String PasswordHash
+    - String FirstName
+    - String LastName
+    - String PhoneNumber
+    - DateTime CreatedAt
+    - DateTime UpdatedAt
+    --
+    + UpdatePasswordHash(newPasswordHash: String)
+    + UpdateBasicProfile(firstName: String, lastName: String, phoneNumber: String)
+}
+
+' =======================
+' COMMANDS / QUERIES
+' =======================
+class RegisterCommand <<command>> {
+    - String Email
+    - String Password
+    - String FirstName
+    - String LastName
+    - String PhoneNumber
+}
+
+class LoginQuery <<query>> {
+    - String Email
+    - String Password
+}
+
+' =======================
+' REPOSITORIOS / SERVICIOS DE DOMINIO
+' =======================
+interface IUserRepository {
+    + ExistsByEmailAsync(email: String): Task<bool>
+    + FindByEmailAsync(email: String): Task<User>
+    + FindByIdAsync(id: Long): Task<User>
+    + AddAsync(user: User): Task
+}
+
+interface IUserCommandService {
+    + Handle(command: RegisterCommand): Task
+}
+
+interface IUserQueryService {
+    + AuthenticateAsync(query: LoginQuery): Task<(User, String)>
+}
+
+' =======================
+' RELACIONES
+' =======================
+IUserRepository ..> User : opera sobre
+IUserCommandService ..> RegisterCommand : maneja
+IUserQueryService ..> LoginQuery : maneja
+IUserQueryService ..> User : retorna
+
+@enduml

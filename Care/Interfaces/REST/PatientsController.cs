@@ -43,7 +43,8 @@ public class PatientsController : ControllerBase
                 resource.BirthDate,
                 resource.RelationshipTypeId,
                 resource.BloodType,
-                resource.MedicalConditions));
+                resource.MedicalConditions,
+                resource.Medications));
 
             var created = await _queryService.Handle(new GetPatientByIdQuery(userId, id));
             if (created is null) return Ok(new { patientId = id });
@@ -86,7 +87,8 @@ public class PatientsController : ControllerBase
                 resource.LastName,
                 resource.BirthDate,
                 resource.BloodType,
-                resource.MedicalConditions));
+                resource.MedicalConditions,
+                resource.Medications));
 
             return Ok(new { message = "Paciente actualizado." });
         }
@@ -160,6 +162,51 @@ public class PatientsController : ControllerBase
         {
             await _commandService.Handle(new RemoveEmergencyContactCommand(userId, id, contactId));
             return Ok(new { message = "Contacto eliminado." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+    
+    [HttpPost("{id:long}/annotations")]
+    public async Task<IActionResult> AddAnnotation([FromRoute] long id, [FromBody] AddPatientAnnotationResource resource)
+    {
+        var userId = GetUserIdOrThrow();
+        try
+        {
+            await _commandService.Handle(new AddPatientAnnotationCommand(userId, id, resource.Content));
+            return Ok(new { message = "Anotación guardada exitosamente." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+    
+    [HttpGet("{id:long}/annotations")]
+    public async Task<IActionResult> GetAnnotations([FromRoute] long id)
+    {
+        var userId = GetUserIdOrThrow();
+        try
+        {
+            var annotations = (await _queryService.Handle(new GetPatientAnnotationsQuery(userId, id))).ToList();
+        
+            // Mapeamos para enviar el nombre del autor y cumplir el contrato del front
+            var result = new List<object>();
+            foreach (var ann in annotations)
+            {
+                var user = await _userInfoService.FindByIdAsync(ann.AuthorUserId);
+                result.Add(new
+                {
+                    id = ann.PatientAnnotationId.ToString(),
+                    date = ann.CreatedAt.ToString("o"), // Formato ISO 8601
+                    text = ann.Content,
+                    author = user != null ? $"{user.FirstName} {user.LastName}" : "Usuario Desconocido"
+                });
+            }
+        
+            return Ok(result);
         }
         catch (Exception ex)
         {
@@ -263,6 +310,7 @@ public class PatientsController : ControllerBase
             patient.BirthDate,
             patient.BloodType,
             patient.MedicalConditions,
+            patient.Medications, //
             patient.CurrentGuardianUserId,
             patient.OfficialGuardianUserId,
             caregivers = await BuildCaregiverResponsesAsync(patient.Caregivers, patient.OfficialGuardianUserId),

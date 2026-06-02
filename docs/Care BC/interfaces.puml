@@ -1,0 +1,100 @@
+@startuml Care_Interfaces
+title Care - Interfaces Layer (REST)
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS (referenciados)
+' =======================
+interface IPatientCommandService
+interface IPatientQueryService
+interface IRelationshipTypeQueryService
+interface IUserInfoService
+
+' =======================
+' CONTROLLERS
+' =======================
+class PatientsController <<controller>> {
+    - IPatientCommandService _commandService
+    - IPatientQueryService _queryService
+    - IUserInfoService _userInfoService
+    --
+    + Create(resource: CreatePatientResource): Task<IActionResult>
+    + GetById(id: Long): Task<IActionResult>
+    + Update(id: Long, resource: UpdatePatientResource): Task<IActionResult>
+    + AssignGuardShift(id: Long, resource: AssignGuardShiftResource): Task<IActionResult>
+    + RestoreGuardShift(id: Long): Task<IActionResult>
+    + AddEmergencyContact(id: Long, resource: AddEmergencyContactResource): Task<IActionResult>
+    + RemoveEmergencyContact(id: Long, contactId: Long): Task<IActionResult>
+    + CreateInvitation(dni: String, resource: CreateInvitationResource): Task<IActionResult>
+    + GetCaregivers(id: Long): Task<IActionResult>
+    + GetPatientsByCaregiverUserId(caregiverUserId: Long): Task<IActionResult>
+}
+
+class InvitationsController <<controller>> {
+    - IPatientCommandService _commandService
+    --
+    + Accept(invitationId: Long): Task<IActionResult>
+    + Reject(invitationId: Long): Task<IActionResult>
+}
+
+class RelationshipTypesController <<controller>> {
+    - IRelationshipTypeQueryService _service
+    --
+    + List(): Task<IActionResult>
+}
+
+' =======================
+' RESOURCES (DTOs REST)
+' =======================
+class CreatePatientResource <<resource>> {
+    - String Dni
+    - String FirstName
+    - String LastName
+    - DateOnly BirthDate
+    - Short RelationshipTypeId
+    - BloodType BloodType
+    - Dictionary<String,String> MedicalConditions
+}
+
+class UpdatePatientResource <<resource>> {
+    - String FirstName
+    - String LastName
+    - DateOnly BirthDate
+    - BloodType BloodType
+    - Dictionary<String,String> MedicalConditions
+}
+
+class AddEmergencyContactResource <<resource>> {
+    - String FullName
+    - String PhoneNumber
+    - Object Relationship
+}
+
+class AssignGuardShiftResource <<resource>> {
+    - Long NewCurrentGuardianUserId
+}
+
+class CreateInvitationResource <<resource>> {
+    - Short RelationshipTypeId
+}
+
+' =======================
+' RELACIONES
+' =======================
+PatientsController --> IPatientCommandService : usa
+PatientsController --> IPatientQueryService : usa
+PatientsController --> IUserInfoService : usa
+
+InvitationsController --> IPatientCommandService : usa
+
+RelationshipTypesController --> IRelationshipTypeQueryService : usa
+
+PatientsController ..> CreatePatientResource : recibe
+PatientsController ..> UpdatePatientResource : recibe
+PatientsController ..> AssignGuardShiftResource : recibe
+PatientsController ..> AddEmergencyContactResource : recibe
+PatientsController ..> CreateInvitationResource : recibe
+
+@enduml

@@ -1,0 +1,131 @@
+@startuml Care_Application
+title Care - Application Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS DEL DOMINIO (referenciados)
+' =======================
+interface IPatientCommandService
+interface IPatientQueryService
+interface IRelationshipTypeQueryService
+interface IPatientRepository
+interface IPatientInvitationRepository
+interface IRelationshipTypeRepository
+
+' =======================
+' COMMAND / QUERY SERVICES
+' =======================
+class PatientCommandService {
+    - IPatientRepository _patientRepository
+    - IPatientInvitationRepository _invitationRepository
+    - IRelationshipTypeRepository _relationshipTypeRepository
+    - IUnitOfWork _unitOfWork
+    --
+    + Handle(command: CreatePatientCommand): Task<Long>
+    + Handle(command: UpdatePatientCommand): Task
+    + Handle(command: AssignGuardShiftCommand): Task
+    + Handle(command: RestoreGuardShiftCommand): Task
+    + Handle(command: AddEmergencyContactCommand): Task<Long>
+    + Handle(command: RemoveEmergencyContactCommand): Task
+    + Handle(command: CreateInvitationCommand): Task<Long>
+    + Handle(command: AcceptInvitationCommand): Task
+    + Handle(command: RejectInvitationCommand): Task
+}
+
+class PatientQueryService {
+    - IPatientRepository _patientRepository
+    - IPatientInvitationRepository _invitationRepository
+    --
+    + Handle(query: GetPatientByIdQuery): Task<Patient>
+    + Handle(query: GetPatientByDniQuery): Task<Patient>
+    + Handle(query: GetPatientsForUserQuery): Task<IEnumerable<Patient>>
+    + Handle(query: GetCaregiversByPatientIdQuery): Task<IEnumerable<CaregiverRole>>
+    + Handle(query: GetInvitationsByPatientDniQuery): Task<IEnumerable<PatientInvitation>>
+    + Handle(query: GetInvitationByIdQuery): Task<PatientInvitation>
+}
+
+class RelationshipTypeQueryService {
+    - IRelationshipTypeRepository _repository
+    --
+    + Handle(query: ListRelationshipTypesQuery): Task<IEnumerable<RelationshipType>>
+}
+
+' =======================
+' ACL (puertos hacia otros BCs)
+' =======================
+interface IPatientDeviceAcl {
+    + GetPatientDeviceAccessByIdAsync(patientId: Long): Task<PatientDeviceAccessDto>
+}
+
+class PatientDeviceAcl {
+    - IPatientRepository _patientRepository
+    --
+    + GetPatientDeviceAccessByIdAsync(patientId: Long): Task<PatientDeviceAccessDto>
+}
+
+class PatientDeviceAccessDto <<dto>> {
+    - Long PatientId
+    - Long OfficialGuardianUserId
+}
+
+interface IPatientEmergencyAcl {
+    + GetPatientEmergencyAccessByIdAsync(patientId: Long): Task<PatientEmergencyAccessDto>
+}
+
+class PatientEmergencyAcl {
+    - IPatientRepository _patientRepository
+    --
+    + GetPatientEmergencyAccessByIdAsync(patientId: Long): Task<PatientEmergencyAccessDto>
+}
+
+class PatientEmergencyAccessDto <<dto>> {
+    - Long PatientId
+    - Long OfficialGuardianUserId
+    - Long CurrentGuardianUserId
+    - IReadOnlyCollection<Long> CaregiverUserIds
+}
+
+' =======================
+' OUTBOUND SERVICES (consumen otros BCs)
+' =======================
+interface IUserInfoService {
+    + FindByIdAsync(userId: Long): Task<UserInfo>
+}
+
+class UserInfoService {
+    - IamUserInfoAcl _userInfoAcl
+    --
+    + FindByIdAsync(userId: Long): Task<UserInfo>
+}
+
+' =======================
+' RELACIONES (implementaciones de puertos)
+' =======================
+PatientCommandService ..|> IPatientCommandService
+PatientQueryService ..|> IPatientQueryService
+RelationshipTypeQueryService ..|> IRelationshipTypeQueryService
+
+PatientCommandService --> IPatientRepository : usa
+PatientCommandService --> IPatientInvitationRepository : usa
+PatientCommandService --> IRelationshipTypeRepository : usa
+PatientCommandService --> IUnitOfWork : usa
+
+PatientQueryService --> IPatientRepository : usa
+PatientQueryService --> IPatientInvitationRepository : usa
+
+RelationshipTypeQueryService --> IRelationshipTypeRepository : usa
+
+PatientDeviceAcl ..|> IPatientDeviceAcl
+PatientDeviceAcl --> IPatientRepository : usa
+IPatientDeviceAcl ..> PatientDeviceAccessDto : retorna
+
+PatientEmergencyAcl ..|> IPatientEmergencyAcl
+PatientEmergencyAcl --> IPatientRepository : usa
+IPatientEmergencyAcl ..> PatientEmergencyAccessDto : retorna
+
+UserInfoService ..|> IUserInfoService
+UserInfoService --> IamUserInfoAcl : delega
+
+@enduml

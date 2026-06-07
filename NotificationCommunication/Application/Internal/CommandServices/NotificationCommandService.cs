@@ -73,15 +73,17 @@ public class NotificationCommandService : INotificationCommandService
                     command.Body,
                     ParseData(command.DataJson)));
 
+                var processedAt = DateTime.UtcNow;
+                DeactivateInvalidTokens(tokens, result.InvalidTokens, processedAt);
+
                 if (result.Success)
                 {
-                    notification.MarkSent(result.ProviderMessageId, DateTime.UtcNow);
-                    foreach (var token in tokens)
-                        token.MarkUsed(DateTime.UtcNow);
+                    notification.MarkSent(result.ProviderMessageId, processedAt);
+                    MarkSuccessfulTokensUsed(tokens, result.FailedTokens, result.InvalidTokens, processedAt);
                 }
                 else
                 {
-                    notification.MarkFailed(result.ErrorMessage ?? "Error enviando push notification.", DateTime.UtcNow);
+                    notification.MarkFailed(result.ErrorMessage ?? "Error enviando push notification.", processedAt);
                 }
             }
             catch (Exception exception)
@@ -125,6 +127,36 @@ public class NotificationCommandService : INotificationCommandService
         catch
         {
             return new Dictionary<string, string>();
+        }
+    }
+
+    private void DeactivateInvalidTokens(IReadOnlyCollection<UserPushToken> tokens, IReadOnlyCollection<string> invalidTokenValues, DateTime updatedAt)
+    {
+        if (invalidTokenValues.Count == 0) return;
+
+        var invalidTokenSet = invalidTokenValues.ToHashSet(StringComparer.Ordinal);
+        foreach (var token in tokens.Where(token => invalidTokenSet.Contains(token.Token)))
+        {
+            token.Deactivate(updatedAt);
+            _userPushTokenRepository.Update(token);
+        }
+    }
+
+    private static void MarkSuccessfulTokensUsed(
+        IReadOnlyCollection<UserPushToken> tokens,
+        IReadOnlyCollection<string> failedTokenValues,
+        IReadOnlyCollection<string> invalidTokenValues,
+        DateTime usedAt)
+    {
+        var failedTokenSet = failedTokenValues.ToHashSet(StringComparer.Ordinal);
+        var invalidTokenSet = invalidTokenValues.ToHashSet(StringComparer.Ordinal);
+
+        foreach (var token in tokens)
+        {
+            if (failedTokenSet.Contains(token.Token) || invalidTokenSet.Contains(token.Token))
+                continue;
+
+            token.MarkUsed(usedAt);
         }
     }
 }

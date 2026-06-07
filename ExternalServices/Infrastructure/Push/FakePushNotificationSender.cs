@@ -15,7 +15,7 @@ public class FakePushNotificationSender : IPushNotificationSender
     public Task<PushNotificationResult> SendAsync(PushNotificationRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Tokens.Count == 0)
-            return Task.FromResult(PushNotificationResult.Failed("No hay tokens push activos para el usuario."));
+            return Task.FromResult(PushNotificationResult.Failed("No hay tokens push activos para el usuario.", 0));
 
         var providerMessageId = $"fake-push-{Guid.NewGuid():N}";
         _logger.LogInformation(
@@ -25,6 +25,6 @@ public class FakePushNotificationSender : IPushNotificationSender
             request.Title,
             providerMessageId);
 
-        return Task.FromResult(PushNotificationResult.Sent(providerMessageId));
+        return Task.FromResult(PushNotificationResult.Sent(providerMessageId, request.Tokens.Count));
     }
 }

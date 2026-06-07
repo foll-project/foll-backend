@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using foll_backend.Shared.Infrastructure.Persistence.EFC.Configuration;
@@ -11,9 +12,11 @@ using foll_backend.Shared.Infrastructure.Persistence.EFC.Configuration;
 namespace foll_backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260530054750_AddNotificationCommunicationPersistence")]
+    partial class AddNotificationCommunicationPersistence
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -103,13 +106,8 @@ namespace foll_backend.Migrations
 
                     b.Property<string>("MedicalConditions")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("medical_conditions");
-
-                    b.Property<string>("Medications")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("medications");
 
                     b.Property<long>("OfficialGuardianUserId")
                         .HasColumnType("bigint")
@@ -123,41 +121,6 @@ namespace foll_backend.Migrations
                         .HasDatabaseName("ix_patients_dni");
 
                     b.ToTable("patients", "care");
-                });
-
-            modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientAnnotation", b =>
-                {
-                    b.Property<long>("PatientAnnotationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("patient_annotation_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("PatientAnnotationId"));
-
-                    b.Property<long>("AuthorUserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("author_user_id");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("content");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at");
-
-                    b.Property<long>("PatientId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("patient_id");
-
-                    b.HasKey("PatientAnnotationId")
-                        .HasName("pk_patient_annotations");
-
-                    b.HasIndex("PatientId")
-                        .HasDatabaseName("ix_patient_annotations_patient_id");
-
-                    b.ToTable("patient_annotations", "care");
                 });
 
             modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientInvitation", b =>
@@ -364,224 +327,6 @@ namespace foll_backend.Migrations
                         .HasDatabaseName("ix_device_events_device_id_event_type_is_resolved");
 
                     b.ToTable("device_events", "device");
-                });
-
-            modelBuilder.Entity("foll_backend.EmergencyAnalytics.Domain.Model.Entities.EmergencyIncident", b =>
-                {
-                    b.Property<long>("EmergencyIncidentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("emergency_incident_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("EmergencyIncidentId"));
-
-                    b.Property<decimal?>("AiConfidenceScore")
-                        .HasColumnType("numeric(5,4)")
-                        .HasColumnName("ai_confidence_score");
-
-                    b.Property<string>("CancellationReason")
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("cancellation_reason");
-
-                    b.Property<DateTime?>("CancelledAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cancelled_at");
-
-                    b.Property<DateTime?>("ClosedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("closed_at");
-
-                    b.Property<long?>("ClosedByUserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("closed_by_user_id");
-
-                    b.Property<long>("DeviceId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("device_id");
-
-                    b.Property<short>("FallTypeId")
-                        .HasColumnType("smallint")
-                        .HasColumnName("fall_type_id");
-
-                    b.Property<string>("FinalObservation")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("final_observation");
-
-                    b.Property<Guid>("IncidentKey")
-                        .HasColumnType("uuid")
-                        .HasColumnName("incident_key");
-
-                    b.Property<DateTime>("LastSignalAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("last_signal_at");
-
-                    b.Property<string>("LastSourcePayload")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("last_source_payload");
-
-                    b.Property<decimal?>("Latitude")
-                        .HasColumnType("numeric(9,6)")
-                        .HasColumnName("latitude");
-
-                    b.Property<decimal?>("Longitude")
-                        .HasColumnType("numeric(9,6)")
-                        .HasColumnName("longitude");
-
-                    b.Property<DateTime>("OpenedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("opened_at");
-
-                    b.Property<long>("PatientId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("patient_id");
-
-                    b.Property<DateTime?>("ResolvedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("resolved_at");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("status");
-
-                    b.HasKey("EmergencyIncidentId")
-                        .HasName("pk_emergency_incidents");
-
-                    b.HasIndex("DeviceId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_emergency_incidents_device_id")
-                        .HasFilter("\"status\" = 'Open'");
-
-                    b.HasIndex("FallTypeId")
-                        .HasDatabaseName("ix_emergency_incidents_fall_type_id");
-
-                    b.HasIndex("IncidentKey")
-                        .IsUnique()
-                        .HasDatabaseName("ix_emergency_incidents_incident_key");
-
-                    b.HasIndex("PatientId")
-                        .HasDatabaseName("ix_emergency_incidents_patient_id");
-
-                    b.HasIndex("Status")
-                        .HasDatabaseName("ix_emergency_incidents_status");
-
-                    b.ToTable("emergency_incidents", "emergency");
-                });
-
-            modelBuilder.Entity("foll_backend.EmergencyAnalytics.Domain.Model.Entities.EmergencyOutboxMessage", b =>
-                {
-                    b.Property<long>("EmergencyOutboxMessageId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("emergency_outbox_message_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("EmergencyOutboxMessageId"));
-
-                    b.Property<string>("Error")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("error");
-
-                    b.Property<DateTime>("OccurredOn")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("occurred_on");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("payload");
-
-                    b.Property<DateTime?>("ProcessedOn")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("processed_on");
-
-                    b.Property<int>("RetryCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("retry_count");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("type");
-
-                    b.HasKey("EmergencyOutboxMessageId")
-                        .HasName("pk_emergency_outbox_messages");
-
-                    b.HasIndex("ProcessedOn")
-                        .HasDatabaseName("ix_emergency_outbox_messages_processed_on");
-
-                    b.ToTable("outbox_messages", "emergency");
-                });
-
-            modelBuilder.Entity("foll_backend.EmergencyAnalytics.Domain.Model.Entities.FallType", b =>
-                {
-                    b.Property<short>("FallTypeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("smallint")
-                        .HasColumnName("fall_type_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("FallTypeId"));
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("description");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("name");
-
-                    b.Property<short>("SeverityLevel")
-                        .HasColumnType("smallint")
-                        .HasColumnName("severity_level");
-
-                    b.HasKey("FallTypeId")
-                        .HasName("pk_fall_types");
-
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("ix_fall_types_name");
-
-                    b.ToTable("fall_types", "emergency");
-
-                    b.HasData(
-                        new
-                        {
-                            FallTypeId = (short)1,
-                            Description = "Caída hacia adelante detectada por patrón vectorial frontal del dataset SISFALL.",
-                            Name = "FRONTAL",
-                            SeverityLevel = (short)1
-                        },
-                        new
-                        {
-                            FallTypeId = (short)2,
-                            Description = "Caída lateral detectada por desplazamiento dominante en eje lateral del dataset SISFALL.",
-                            Name = "LATERAL",
-                            SeverityLevel = (short)2
-                        },
-                        new
-                        {
-                            FallTypeId = (short)3,
-                            Description = "Tipo de caída no clasificado o no enviado por el dispositivo/IA.",
-                            Name = "UNKNOWN",
-                            SeverityLevel = (short)2
-                        },
-                        new
-                        {
-                            FallTypeId = (short)4,
-                            Description = "Caída hacia atrás detectada por patrón vectorial posterior del dataset SISFALL.",
-                            Name = "BACKWARD",
-                            SeverityLevel = (short)1
-                        });
                 });
 
             modelBuilder.Entity("foll_backend.IAM.Domain.Model.Entities.User", b =>
@@ -901,16 +646,6 @@ namespace foll_backend.Migrations
                     b.Navigation("Caregivers");
                 });
 
-            modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientAnnotation", b =>
-                {
-                    b.HasOne("foll_backend.Care.Domain.Model.Entities.Patient", null)
-                        .WithMany("Annotations")
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_patient_annotations_patients_patient_id");
-                });
-
             modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientInvitation", b =>
                 {
                     b.HasOne("foll_backend.Care.Domain.Model.Entities.Patient", null)
@@ -921,22 +656,8 @@ namespace foll_backend.Migrations
                         .HasConstraintName("fk_patient_invitations_patients_patient_id");
                 });
 
-            modelBuilder.Entity("foll_backend.EmergencyAnalytics.Domain.Model.Entities.EmergencyIncident", b =>
-                {
-                    b.HasOne("foll_backend.EmergencyAnalytics.Domain.Model.Entities.FallType", "FallType")
-                        .WithMany()
-                        .HasForeignKey("FallTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_emergency_incidents_fall_types_fall_type_id");
-
-                    b.Navigation("FallType");
-                });
-
             modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.Patient", b =>
                 {
-                    b.Navigation("Annotations");
-
                     b.Navigation("EmergencyContacts");
 
                     b.Navigation("Invitations");

@@ -1,0 +1,79 @@
+@startuml Care_Infrastructure
+title Care - Infrastructure Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS (referenciados)
+' =======================
+interface IPatientRepository
+interface IPatientInvitationRepository
+interface IRelationshipTypeRepository
+
+class "BaseRepository<Patient>" as BaseRepositoryPatient
+class "BaseRepository<PatientInvitation>" as BaseRepositoryInvitation
+
+' =======================
+' PERSISTENCIA - REPOSITORIES (EFC)
+' =======================
+class PatientRepository {
+    + PatientRepository(context: AppDbContext)
+    + FindByIdAsync(id: Long): Task<Patient>
+    + FindByDniAsync(dni: String): Task<Patient>
+    + ListForUserAsync(userId: Long): Task<IEnumerable<Patient>>
+}
+
+class PatientInvitationRepository {
+    + PatientInvitationRepository(context: AppDbContext)
+    + ListByPatientIdAsync(patientId: Long): Task<IEnumerable<PatientInvitation>>
+}
+
+class RelationshipTypeRepository {
+    - AppDbContext _context
+    --
+    + FindByIdAsync(id: Short): Task<RelationshipType>
+    + ListAsync(): Task<IEnumerable<RelationshipType>>
+}
+
+' =======================
+' PERSISTENCIA - ENTITY CONFIGURATIONS
+' =======================
+class PatientConfiguration <<entity configuration>> {
+    + Configure(builder: EntityTypeBuilder<Patient>)
+}
+
+class PatientInvitationConfiguration <<entity configuration>> {
+    + Configure(builder: EntityTypeBuilder<PatientInvitation>)
+}
+
+class EmergencyContactConfiguration <<entity configuration>> {
+    + Configure(builder: EntityTypeBuilder<EmergencyContact>)
+}
+
+class RelationshipTypeConfiguration <<entity configuration>> {
+    + Configure(builder: EntityTypeBuilder<RelationshipType>)
+}
+
+interface "IEntityTypeConfiguration<Patient>" as IECPatient
+interface "IEntityTypeConfiguration<PatientInvitation>" as IECInvitation
+interface "IEntityTypeConfiguration<EmergencyContact>" as IECContact
+interface "IEntityTypeConfiguration<RelationshipType>" as IECRelType
+
+' =======================
+' RELACIONES (implementaciones de puertos)
+' =======================
+PatientRepository ..|> IPatientRepository
+PatientRepository --|> BaseRepositoryPatient
+
+PatientInvitationRepository ..|> IPatientInvitationRepository
+PatientInvitationRepository --|> BaseRepositoryInvitation
+
+RelationshipTypeRepository ..|> IRelationshipTypeRepository
+
+PatientConfiguration ..|> IECPatient
+PatientInvitationConfiguration ..|> IECInvitation
+EmergencyContactConfiguration ..|> IECContact
+RelationshipTypeConfiguration ..|> IECRelType
+
+@enduml

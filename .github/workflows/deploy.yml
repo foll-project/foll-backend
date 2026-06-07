@@ -1,0 +1,40 @@
+name: Build and Deploy to Azure Web App
+
+on:
+  push:
+    branches:
+      - main 
+
+env:
+  REGISTRY_NAME: 'follregistry.azurecr.io'
+  IMAGE_NAME: 'foll-backend'
+  WEBAPP_NAME: 'foll-backend' 
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Log in to Azure Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY_NAME }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        images: '${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}'

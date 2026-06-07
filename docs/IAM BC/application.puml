@@ -1,0 +1,82 @@
+@startuml IAM_Application
+title IAM - Application Layer
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' =======================
+' PUERTOS A INFRAESTRUCTURA
+' =======================
+interface IHashingService {
+    + HashPassword(password: String): String
+    + VerifyPassword(password: String, passwordHash: String): bool
+}
+
+interface ITokenService {
+    + GenerateToken(user: User): String
+}
+
+' =======================
+' COMMAND / QUERY SERVICES
+' =======================
+class UserCommandService {
+    - IUserRepository _userRepository
+    - IHashingService _hashingService
+    - IUnitOfWork _unitOfWork
+    --
+    + Handle(command: RegisterCommand): Task
+}
+
+class UserQueryService {
+    - IUserRepository _userRepository
+    - IHashingService _hashingService
+    - ITokenService _tokenService
+    --
+    + AuthenticateAsync(query: LoginQuery): Task<(User, String)>
+}
+
+' =======================
+' ACL (Anti-Corruption Layer)
+' =======================
+interface IUserInfoAcl {
+    + GetUserInfoByIdAsync(userId: Long): Task<UserInfoDto>
+}
+
+class UserInfoAcl {
+    - IUserRepository _userRepository
+    --
+    + GetUserInfoByIdAsync(userId: Long): Task<UserInfoDto>
+}
+
+class UserInfoDto <<dto>> {
+    - Long UserId
+    - String Email
+    - String FirstName
+    - String LastName
+    - String PhoneNumber
+}
+
+' Puertos del dominio referenciados
+interface IUserCommandService
+interface IUserQueryService
+interface IUserRepository
+
+' =======================
+' RELACIONES
+' =======================
+UserCommandService ..|> IUserCommandService
+UserQueryService ..|> IUserQueryService
+UserInfoAcl ..|> IUserInfoAcl
+
+UserCommandService --> IUserRepository : usa
+UserCommandService --> IHashingService : usa
+UserCommandService --> IUnitOfWork : usa
+
+UserQueryService --> IUserRepository : usa
+UserQueryService --> IHashingService : usa
+UserQueryService --> ITokenService : usa
+
+UserInfoAcl --> IUserRepository : usa
+IUserInfoAcl ..> UserInfoDto : retorna
+
+@enduml

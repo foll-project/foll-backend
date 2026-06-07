@@ -22,6 +22,15 @@ public class User
     public User(string email, string passwordHash, string firstName, string lastName, string? phoneNumber)
     {
         if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("El email es obligatorio.", nameof(email));
+        try
+        {
+            var mailAddress = new System.Net.Mail.MailAddress(email);
+        }
+        catch (System.FormatException)
+        {
+            throw new ArgumentException("El formato del email es inválido.", nameof(email));
+        }
+        
         if (string.IsNullOrWhiteSpace(passwordHash)) throw new ArgumentException("El password hash es obligatorio.", nameof(passwordHash));
         if (string.IsNullOrWhiteSpace(firstName)) throw new ArgumentException("El nombre es obligatorio.", nameof(firstName));
         if (string.IsNullOrWhiteSpace(lastName)) throw new ArgumentException("El apellido es obligatorio.", nameof(lastName));

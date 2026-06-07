@@ -16,6 +16,7 @@ public class NotificationCommandService : INotificationCommandService
     private readonly INotificationLogRepository _notificationLogRepository;
     private readonly IUserPushTokenRepository _userPushTokenRepository;
     private readonly IPatientNotificationAccessService _patientNotificationAccessService;
+    private readonly INotificationRealtimePublisher _notificationRealtimePublisher;
     private readonly IPushNotificationSender _pushNotificationSender;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -23,12 +24,14 @@ public class NotificationCommandService : INotificationCommandService
         INotificationLogRepository notificationLogRepository,
         IUserPushTokenRepository userPushTokenRepository,
         IPatientNotificationAccessService patientNotificationAccessService,
+        INotificationRealtimePublisher notificationRealtimePublisher,
         IPushNotificationSender pushNotificationSender,
         IUnitOfWork unitOfWork)
     {
         _notificationLogRepository = notificationLogRepository;
         _userPushTokenRepository = userPushTokenRepository;
         _patientNotificationAccessService = patientNotificationAccessService;
+        _notificationRealtimePublisher = notificationRealtimePublisher;
         _pushNotificationSender = pushNotificationSender;
         _unitOfWork = unitOfWork;
     }
@@ -93,6 +96,9 @@ public class NotificationCommandService : INotificationCommandService
         }
 
         await _unitOfWork.CompleteAsync();
+        foreach (var notification in notifications)
+            await _notificationRealtimePublisher.PublishCreatedAsync(notification);
+
         return notifications[0].NotificationLogId;
     }
 

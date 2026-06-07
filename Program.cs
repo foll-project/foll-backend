@@ -44,6 +44,7 @@ using foll_backend.NotificationCommunication.Application.OutboundServices;
 using foll_backend.NotificationCommunication.Domain.Repositories;
 using foll_backend.NotificationCommunication.Domain.Services;
 using foll_backend.NotificationCommunication.Infrastructure.Persistence.EFC.Repositories;
+using foll_backend.NotificationCommunication.Interfaces.Realtime;
 using foll_backend.Shared.Domain.Repositories;
 using foll_backend.Shared.Infrastructure.Configuration;
 using foll_backend.Shared.Infrastructure.Persistence.EFC.Configuration;
@@ -56,6 +57,7 @@ using Microsoft.OpenApi.Models;
 using foll_backend.Shared.Infrastructure.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
+const string LocalFrontendCorsPolicy = "LocalFrontend";
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
@@ -69,8 +71,22 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(LocalFrontendCorsPolicy, policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:5173",
+                "http://localhost:3000",
+                "http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
 builder.Services.Configure<MqttOptions>(builder.Configuration.GetSection("Mqtt"));
 builder.Services.Configure<DeviceMonitoringOptions>(builder.Configuration.GetSection("DeviceMonitoring"));
@@ -125,6 +141,23 @@ if (!string.IsNullOrEmpty(jwtSecret))
                 ValidateAudience = false,
                 ClockSkew = TimeSpan.Zero
             };
+
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"].ToString();
+                    var path = context.HttpContext.Request.Path;
+
+                    if (!string.IsNullOrWhiteSpace(accessToken) &&
+                        path.StartsWithSegments("/hubs/notifications"))
+                    {
+                        context.Token = accessToken;
+                    }
+
+                    return Task.CompletedTask;
+                }
+            };
         });
 }
 
@@ -165,6 +198,7 @@ builder.Services.AddScoped<IDeviceAssignmentAcl, DeviceAssignmentAcl>();
 builder.Services.AddScoped<IDeviceCommandService, DeviceCommandService>();
 builder.Services.AddScoped<IDeviceQueryService, DeviceQueryService>();
 builder.Services.AddScoped<IPatientNotificationAccessService, PatientNotificationAccessService>();
+builder.Services.AddScoped<INotificationRealtimePublisher, SignalRNotificationRealtimePublisher>();
 builder.Services.AddScoped<INotificationCommandService, NotificationCommandService>();
 builder.Services.AddScoped<INotificationQueryService, NotificationQueryService>();
 builder.Services.AddScoped<IUserPushTokenCommandService, UserPushTokenCommandService>();
@@ -226,9 +260,12 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseCors(LocalFrontendCorsPolicy);
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationsHub>("/hubs/notifications");
 
 app.Run();

@@ -5,6 +5,7 @@ using foll_backend.Care.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using foll_backend.Care.Infrastructure.Persistence.EFC.Converters;
 
 namespace foll_backend.Care.Infrastructure.Persistence.EFC.Configuration;
 
@@ -30,24 +31,33 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
             .HasConversion<short>()
             .HasColumnType("smallint");
 
+        var dictionaryComparer = new ValueComparer<Dictionary<string, string>>(
+            (left, right) => ReferenceEquals(left, right) ||
+                (left != null && right != null &&
+                 left.Count == right.Count &&
+                 left.OrderBy(kv => kv.Key).SequenceEqual(right.OrderBy(kv => kv.Key))),
+
+            value => value == null
+                ? 0
+                : value.OrderBy(kv => kv.Key)
+                    .Aggregate(0, (hash, kv) => HashCode.Combine(hash, kv.Key, kv.Value)),
+
+            value => value == null
+                ? new Dictionary<string, string>()
+                : value.ToDictionary(kv => kv.Key, kv => kv.Value)
+        );
+
         builder.Property(p => p.MedicalConditions)
             .IsRequired()
-            .HasColumnType("jsonb")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, (JsonSerializerOptions?)null) ?? new Dictionary<string, string>())
-            .Metadata.SetValueComparer(new ValueComparer<Dictionary<string, string>>(
-                (left, right) =>
-                    ReferenceEquals(left, right) ||
-                    (left != null && right != null && left.Count == right.Count &&
-                     left.OrderBy(kv => kv.Key).SequenceEqual(right.OrderBy(kv => kv.Key))),
-                value => value == null
-                    ? 0
-                    : value.OrderBy(kv => kv.Key)
-                        .Aggregate(0, (hash, kv) => HashCode.Combine(hash, kv.Key, kv.Value)),
-                value => value == null
-                    ? new Dictionary<string, string>()
-                    : value.ToDictionary(kv => kv.Key, kv => kv.Value)));
+            .HasColumnType("text")
+            .HasConversion(new EncryptedDictionaryConverter())
+            .Metadata.SetValueComparer(dictionaryComparer);
+
+        builder.Property(p => p.Medications)
+            .IsRequired()
+            .HasColumnType("text")
+            .HasConversion(new EncryptedDictionaryConverter())
+            .Metadata.SetValueComparer(dictionaryComparer);
 
         builder.Property(p => p.OfficialGuardianUserId).IsRequired();
         builder.Property(p => p.CurrentGuardianUserId).IsRequired(false);
@@ -72,6 +82,11 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.HasMany(p => p.EmergencyContacts)
             .WithOne()
             .HasForeignKey(c => c.PatientId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasMany(p => p.Annotations)
+            .WithOne()
+            .HasForeignKey(a => a.PatientId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

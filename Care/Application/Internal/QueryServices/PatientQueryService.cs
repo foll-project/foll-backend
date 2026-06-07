@@ -59,6 +59,17 @@ public class PatientQueryService : IPatientQueryService
         EnsureUserLinkedToPatient(patient, query.ActorUserId);
         return await _invitationRepository.ListByPatientIdAsync(patient.PatientId);
     }
+    
+    public async Task<IEnumerable<PatientAnnotation>> Handle(GetPatientAnnotationsQuery query)
+    {
+        var patient = await _patientRepository.FindByIdAsync(query.PatientId);
+        if (patient is null) return Array.Empty<PatientAnnotation>();
+
+        EnsureUserLinkedToPatient(patient, query.ActorUserId);
+
+        // Devolvemos ordenado desde el más reciente al más antiguo
+        return patient.Annotations.OrderByDescending(a => a.CreatedAt).ToList(); 
+    }
 
     public async Task<PatientInvitation?> Handle(GetInvitationByIdQuery query)
     {

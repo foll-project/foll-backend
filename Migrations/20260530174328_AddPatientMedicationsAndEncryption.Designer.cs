@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using foll_backend.Shared.Infrastructure.Persistence.EFC.Configuration;
@@ -11,9 +12,11 @@ using foll_backend.Shared.Infrastructure.Persistence.EFC.Configuration;
 namespace foll_backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260530174328_AddPatientMedicationsAndEncryption")]
+    partial class AddPatientMedicationsAndEncryption
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -123,41 +126,6 @@ namespace foll_backend.Migrations
                         .HasDatabaseName("ix_patients_dni");
 
                     b.ToTable("patients", "care");
-                });
-
-            modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientAnnotation", b =>
-                {
-                    b.Property<long>("PatientAnnotationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("patient_annotation_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("PatientAnnotationId"));
-
-                    b.Property<long>("AuthorUserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("author_user_id");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("content");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at");
-
-                    b.Property<long>("PatientId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("patient_id");
-
-                    b.HasKey("PatientAnnotationId")
-                        .HasName("pk_patient_annotations");
-
-                    b.HasIndex("PatientId")
-                        .HasDatabaseName("ix_patient_annotations_patient_id");
-
-                    b.ToTable("patient_annotations", "care");
                 });
 
             modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientInvitation", b =>
@@ -730,16 +698,6 @@ namespace foll_backend.Migrations
                     b.Navigation("Caregivers");
                 });
 
-            modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientAnnotation", b =>
-                {
-                    b.HasOne("foll_backend.Care.Domain.Model.Entities.Patient", null)
-                        .WithMany("Annotations")
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_patient_annotations_patient_patient_id");
-                });
-
             modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientInvitation", b =>
                 {
                     b.HasOne("foll_backend.Care.Domain.Model.Entities.Patient", null)
@@ -764,8 +722,6 @@ namespace foll_backend.Migrations
 
             modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.Patient", b =>
                 {
-                    b.Navigation("Annotations");
-
                     b.Navigation("EmergencyContacts");
 
                     b.Navigation("Invitations");

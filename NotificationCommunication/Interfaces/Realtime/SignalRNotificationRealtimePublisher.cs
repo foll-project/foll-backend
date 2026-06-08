@@ -30,6 +30,7 @@ public class SignalRNotificationRealtimePublisher : INotificationRealtimePublish
                 notification.NotificationStatus.ToString(),
                 notification.Title,
                 notification.Body,
+                notification.DataJson,
                 notification.PatientId,
                 notification.DeviceId,
                 notification.CreatedAt);

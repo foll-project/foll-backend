@@ -1,4 +1,7 @@
+using foll_backend.Care.Application.OutboundServices;
 using foll_backend.Care.Domain.Model.Commands;
+using foll_backend.Care.Domain.Model.Queries;
+using foll_backend.Care.Domain.Model.ValueObjects;
 using foll_backend.Care.Domain.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -12,10 +15,49 @@ namespace foll_backend.Care.Interfaces.REST;
 public class InvitationsController : ControllerBase
 {
     private readonly IPatientCommandService _commandService;
+    private readonly IPatientQueryService _queryService;
+    private readonly IUserInfoService _userInfoService;
 
-    public InvitationsController(IPatientCommandService commandService)
+    public InvitationsController(
+        IPatientCommandService commandService,
+        IPatientQueryService queryService,
+        IUserInfoService userInfoService)
     {
         _commandService = commandService;
+        _queryService = queryService;
+        _userInfoService = userInfoService;
+    }
+
+    // Invitaciones que el usuario actual debe aprobar/rechazar (es cuidador principal).
+    [HttpGet("received")]
+    public async Task<IActionResult> GetReceived()
+    {
+        var userId = GetUserIdOrThrow();
+        try
+        {
+            var invitations = await _queryService.Handle(new GetReceivedInvitationsQuery(userId));
+            return Ok(await BuildInvitationResponsesAsync(invitations));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // Invitaciones que el usuario actual envió a otros pacientes.
+    [HttpGet("sent")]
+    public async Task<IActionResult> GetSent()
+    {
+        var userId = GetUserIdOrThrow();
+        try
+        {
+            var invitations = await _queryService.Handle(new GetSentInvitationsQuery(userId));
+            return Ok(await BuildInvitationResponsesAsync(invitations));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost("{invitationId:long}/accept")]
@@ -48,6 +90,35 @@ public class InvitationsController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    private async Task<List<object>> BuildInvitationResponsesAsync(IEnumerable<InvitationView> invitations)
+    {
+        var result = new List<object>();
+        foreach (var invitation in invitations)
+        {
+            var requester = await _userInfoService.FindByIdAsync(invitation.InvitingUserId);
+            result.Add(new
+            {
+                invitationId = invitation.InvitationId,
+                patientId = invitation.PatientId,
+                patientFirstName = invitation.PatientFirstName,
+                patientLastName = invitation.PatientLastName,
+                patientName = $"{invitation.PatientFirstName} {invitation.PatientLastName}".Trim(),
+                patientDni = invitation.PatientDni,
+                requesterUserId = invitation.InvitingUserId,
+                requesterName = requester != null
+                    ? $"{requester.FirstName} {requester.LastName}".Trim()
+                    : "Usuario desconocido",
+                requesterEmail = requester?.Email,
+                relationshipTypeId = invitation.RelationshipTypeId,
+                relationshipName = invitation.RelationshipName,
+                status = invitation.Status,
+                expiresAt = invitation.ExpiresAt
+            });
+        }
+
+        return result;
     }
 
     private long GetUserIdOrThrow()

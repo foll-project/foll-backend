@@ -10,11 +10,16 @@ public class PatientQueryService : IPatientQueryService
 {
     private readonly IPatientRepository _patientRepository;
     private readonly IPatientInvitationRepository _invitationRepository;
+    private readonly IRelationshipTypeRepository _relationshipTypeRepository;
 
-    public PatientQueryService(IPatientRepository patientRepository, IPatientInvitationRepository invitationRepository)
+    public PatientQueryService(
+        IPatientRepository patientRepository,
+        IPatientInvitationRepository invitationRepository,
+        IRelationshipTypeRepository relationshipTypeRepository)
     {
         _patientRepository = patientRepository;
         _invitationRepository = invitationRepository;
+        _relationshipTypeRepository = relationshipTypeRepository;
     }
 
     public async Task<Patient?> Handle(GetPatientByIdQuery query)
@@ -81,6 +86,55 @@ public class PatientQueryService : IPatientQueryService
 
         EnsureUserLinkedToPatient(patient, query.ActorUserId);
         return invitation;
+    }
+
+    public async Task<IEnumerable<InvitationView>> Handle(GetReceivedInvitationsQuery query)
+    {
+        var invitations = await _invitationRepository.ListForOfficialGuardianAsync(query.ActorUserId);
+        return await BuildInvitationViewsAsync(invitations);
+    }
+
+    public async Task<IEnumerable<InvitationView>> Handle(GetSentInvitationsQuery query)
+    {
+        var invitations = await _invitationRepository.ListByInvitingUserIdAsync(query.ActorUserId);
+        return await BuildInvitationViewsAsync(invitations);
+    }
+
+    private async Task<IEnumerable<InvitationView>> BuildInvitationViewsAsync(IEnumerable<PatientInvitation> invitations)
+    {
+        var invitationList = invitations.ToList();
+        if (invitationList.Count == 0) return Array.Empty<InvitationView>();
+
+        var relationshipNames = (await _relationshipTypeRepository.ListAsync())
+            .ToDictionary(r => r.RelationshipTypeId, r => r.Name);
+
+        var patientCache = new Dictionary<long, Patient?>();
+        var views = new List<InvitationView>();
+
+        foreach (var invitation in invitationList)
+        {
+            if (!patientCache.TryGetValue(invitation.PatientId, out var patient))
+            {
+                patient = await _patientRepository.FindByIdAsync(invitation.PatientId);
+                patientCache[invitation.PatientId] = patient;
+            }
+
+            relationshipNames.TryGetValue(invitation.RelationshipTypeId, out var relationshipName);
+
+            views.Add(new InvitationView(
+                invitation.PatientInvitationId,
+                invitation.PatientId,
+                patient?.FirstName ?? string.Empty,
+                patient?.LastName ?? string.Empty,
+                patient?.Dni ?? string.Empty,
+                invitation.InvitingUserId,
+                invitation.RelationshipTypeId,
+                relationshipName ?? "Cuidador",
+                invitation.Status.ToString(),
+                invitation.ExpiresAt));
+        }
+
+        return views;
     }
 
     private static void EnsureUserLinkedToPatient(Patient patient, long actorUserId)

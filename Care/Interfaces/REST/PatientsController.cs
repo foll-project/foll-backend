@@ -20,12 +20,18 @@ public class PatientsController : ControllerBase
     private readonly IPatientCommandService _commandService;
     private readonly IPatientQueryService _queryService;
     private readonly IUserInfoService _userInfoService;
+    private readonly IPatientDeviceStatusService _patientDeviceStatusService;
 
-    public PatientsController(IPatientCommandService commandService, IPatientQueryService queryService, IUserInfoService userInfoService)
+    public PatientsController(
+        IPatientCommandService commandService,
+        IPatientQueryService queryService,
+        IUserInfoService userInfoService,
+        IPatientDeviceStatusService patientDeviceStatusService)
     {
         _commandService = commandService;
         _queryService = queryService;
         _userInfoService = userInfoService;
+        _patientDeviceStatusService = patientDeviceStatusService;
     }
 
     [HttpPost]
@@ -315,7 +321,34 @@ public class PatientsController : ControllerBase
             patient.OfficialGuardianUserId,
             caregivers = await BuildCaregiverResponsesAsync(patient.Caregivers, patient.OfficialGuardianUserId),
             patient.EmergencyContacts,
-            patient.Invitations
+            patient.Invitations,
+            device = await BuildDeviceResponseAsync(patient.PatientId)
+        };
+    }
+
+    private async Task<object> BuildDeviceResponseAsync(long patientId)
+    {
+        var device = await _patientDeviceStatusService.GetByPatientIdAsync(patientId);
+
+        if (device is null)
+        {
+            return new { isLinked = false };
+        }
+
+        return new
+        {
+            isLinked = true,
+            deviceId = device.DeviceId,
+            status = device.Status,
+            connectivityStatus = device.ConnectivityStatus,
+            currentBatteryLevel = device.CurrentBatteryLevel,
+            isCharging = device.IsCharging,
+            lastHeartbeatAt = device.LastHeartbeatAt,
+            monitoringStartedAt = device.MonitoringStartedAt,
+            lastConnectivityChangeAt = device.LastConnectivityChangeAt,
+            isOnline = device.IsOnline,
+            isLowBattery = device.IsLowBattery,
+            firmwareVersion = device.FirmwareVersion
         };
     }
 

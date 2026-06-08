@@ -195,6 +195,8 @@ builder.Services.AddScoped<IUserPushTokenRepository, UserPushTokenRepository>();
 
 builder.Services.AddScoped<IPatientAccessService, PatientAccessService>();
 builder.Services.AddScoped<IDeviceAssignmentAcl, DeviceAssignmentAcl>();
+builder.Services.AddScoped<IDeviceStatusAcl, DeviceStatusAcl>();
+builder.Services.AddScoped<IPatientDeviceStatusService, PatientDeviceStatusService>();
 builder.Services.AddScoped<IDeviceCommandService, DeviceCommandService>();
 builder.Services.AddScoped<IDeviceQueryService, DeviceQueryService>();
 builder.Services.AddScoped<IPatientNotificationAccessService, PatientNotificationAccessService>();

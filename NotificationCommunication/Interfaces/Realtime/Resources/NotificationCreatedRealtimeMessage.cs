@@ -10,6 +10,7 @@ public record NotificationCreatedRealtimeMessage(
     [property: JsonPropertyName("notificationStatus")] string NotificationStatus,
     [property: JsonPropertyName("title")] string Title,
     [property: JsonPropertyName("body")] string Body,
+    [property: JsonPropertyName("dataJson")] string? DataJson,
     [property: JsonPropertyName("patientId")] long? PatientId,
     [property: JsonPropertyName("deviceId")] long? DeviceId,
     [property: JsonPropertyName("createdAt")] DateTime CreatedAt);

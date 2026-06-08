@@ -186,6 +186,7 @@ builder.Services.AddScoped<IPatientCommandService, PatientCommandService>();
 builder.Services.AddScoped<IPatientQueryService, PatientQueryService>();
 builder.Services.AddScoped<IRelationshipTypeQueryService, RelationshipTypeQueryService>();
 builder.Services.AddScoped<IUserInfoService, UserInfoService>();
+builder.Services.AddScoped<IInvitationRealtimePublisher, SignalRInvitationRealtimePublisher>();
 
 builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
 builder.Services.AddScoped<IDeviceEventRepository, DeviceEventRepository>();

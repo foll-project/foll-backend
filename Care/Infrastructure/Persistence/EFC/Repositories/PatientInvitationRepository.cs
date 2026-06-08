@@ -20,4 +20,28 @@ public class PatientInvitationRepository : BaseRepository<PatientInvitation>, IP
             .Where(i => i.PatientId == patientId)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<PatientInvitation>> ListByInvitingUserIdAsync(long invitingUserId)
+    {
+        if (invitingUserId <= 0) return Array.Empty<PatientInvitation>();
+
+        return await Context.Set<PatientInvitation>()
+            .Where(i => i.InvitingUserId == invitingUserId)
+            .OrderByDescending(i => i.PatientInvitationId)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<PatientInvitation>> ListForOfficialGuardianAsync(long guardianUserId)
+    {
+        if (guardianUserId <= 0) return Array.Empty<PatientInvitation>();
+
+        var patientIds = Context.Set<Patient>()
+            .Where(p => p.OfficialGuardianUserId == guardianUserId)
+            .Select(p => p.PatientId);
+
+        return await Context.Set<PatientInvitation>()
+            .Where(i => patientIds.Contains(i.PatientId))
+            .OrderByDescending(i => i.PatientInvitationId)
+            .ToListAsync();
+    }
 }

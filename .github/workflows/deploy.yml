@@ -6,9 +6,9 @@ on:
       - main 
 
 env:
-  REGISTRY_NAME: 'follregistry.azurecr.io'
+  REGISTRY_NAME: 'follregistry2.azurecr.io'
   IMAGE_NAME: 'foll-backend'
-  WEBAPP_NAME: 'foll-backend' 
+  WEBAPP_NAME: 'foll-backend-iot' 
 
 jobs:
   build-and-deploy:

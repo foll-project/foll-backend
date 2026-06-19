@@ -202,6 +202,7 @@ builder.Services.AddScoped<IDeviceCommandService, DeviceCommandService>();
 builder.Services.AddScoped<IDeviceQueryService, DeviceQueryService>();
 builder.Services.AddScoped<IPatientNotificationAccessService, PatientNotificationAccessService>();
 builder.Services.AddScoped<INotificationRealtimePublisher, SignalRNotificationRealtimePublisher>();
+builder.Services.AddScoped<IDeviceTelemetryRealtimePublisher, SignalRDeviceTelemetryRealtimePublisher>();
 builder.Services.AddScoped<INotificationCommandService, NotificationCommandService>();
 builder.Services.AddScoped<INotificationQueryService, NotificationQueryService>();
 builder.Services.AddScoped<IUserPushTokenCommandService, UserPushTokenCommandService>();

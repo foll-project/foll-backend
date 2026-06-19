@@ -19,6 +19,7 @@ public class DeviceCommandService : IDeviceCommandService
     private readonly IDeviceEventRepository _deviceEventRepository;
     private readonly IOutboxMessageRepository _outboxMessageRepository;
     private readonly IPatientAccessService _patientAccessService;
+    private readonly IDeviceTelemetryRealtimePublisher _telemetryRealtimePublisher;
     private readonly IUnitOfWork _unitOfWork;
     private readonly DeviceMonitoringOptions _monitoringOptions;
     private readonly ILogger<DeviceCommandService> _logger;
@@ -28,6 +29,7 @@ public class DeviceCommandService : IDeviceCommandService
         IDeviceEventRepository deviceEventRepository,
         IOutboxMessageRepository outboxMessageRepository,
         IPatientAccessService patientAccessService,
+        IDeviceTelemetryRealtimePublisher telemetryRealtimePublisher,
         IUnitOfWork unitOfWork,
         IOptions<DeviceMonitoringOptions> monitoringOptions,
         ILogger<DeviceCommandService> logger)
@@ -36,6 +38,7 @@ public class DeviceCommandService : IDeviceCommandService
         _deviceEventRepository = deviceEventRepository;
         _outboxMessageRepository = outboxMessageRepository;
         _patientAccessService = patientAccessService;
+        _telemetryRealtimePublisher = telemetryRealtimePublisher;
         _unitOfWork = unitOfWork;
         _monitoringOptions = monitoringOptions.Value;
         _logger = logger;
@@ -163,6 +166,19 @@ public class DeviceCommandService : IDeviceCommandService
             device.DeviceId,
             device.LastHeartbeatAt,
             device.ConnectivityStatus);
+
+        // Push de telemetria en TIEMPO REAL (cada heartbeat) hacia los cuidadores
+        // del paciente. Solo si el dispositivo esta vinculado: si no, no hay a quien notificar.
+        if (device.AssignedPatientId.HasValue)
+        {
+            await _telemetryRealtimePublisher.PublishTelemetryAsync(new DeviceTelemetrySnapshot(
+                device.DeviceId,
+                device.AssignedPatientId.Value,
+                device.CurrentBatteryLevel ?? 0,
+                device.IsCharging ?? false,
+                device.ConnectivityStatus == ConnectivityStatus.Connected,
+                device.LastHeartbeatAt ?? command.ReportedAtUtc));
+        }
     }
 
     public async Task Handle(CheckDeviceConnectivityCommand command)

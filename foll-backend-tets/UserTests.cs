@@ -12,7 +12,7 @@ public class UserTests
     {
         // Arrange (Preparar)
         var email = " MiCorreo@Ejemplo.com "; // Notar espacios y mayúsculas
-        var passwordHash = "hashed123";
+        var passwordHash = "hola123";
         var firstName = " Juan ";
         var lastName = " Pérez ";
         var phoneNumber = "123456789";
@@ -21,12 +21,12 @@ public class UserTests
         var user = new User(email, passwordHash, firstName, lastName, phoneNumber);
 
         // Assert (Afirmar/Verificar)
-        Assert.That(user.Email, Is.EqualTo("micorreo@ejemplo.com")); // Validamos el Trim y ToLowerInvariant
-        Assert.That(user.FirstName, Is.EqualTo("Juan")); // Validamos el Trim
+        Assert.That(user.Email, Is.EqualTo("micorreo@ejemplo.com")); 
+        Assert.That(user.FirstName, Is.EqualTo("Juan")); 
         Assert.That(user.LastName, Is.EqualTo("Pérez"));
         Assert.That(user.PasswordHash, Is.EqualTo(passwordHash));
         Assert.That(user.PhoneNumber, Is.EqualTo(phoneNumber));
-        Assert.That(user.CreatedAt, Is.Not.EqualTo(default(DateTime))); // Validamos que se asignó la fecha
+        Assert.That(user.CreatedAt, Is.Not.EqualTo(default(DateTime))); 
     }
 
     [Test]
@@ -38,7 +38,7 @@ public class UserTests
         // Act & Assert
         // Para probar excepciones, Act y Assert van de la mano
         var ex = Assert.Throws<ArgumentException>(() => 
-            new User(emptyEmail, "hash", "Juan", "Pérez", null));
+            new User(emptyEmail, "213ro", "Juan", "Pérez", null));
             
         Assert.That(ex.ParamName, Is.EqualTo("email"));
     }

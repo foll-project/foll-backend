@@ -13,6 +13,7 @@ public class Patient
     public BloodType BloodType { get; private set; }
 
     public Dictionary<string, string> MedicalConditions { get; private set; }
+    public Dictionary<string, string> Medications { get; private set; } //AGREGADO
 
     public long? CurrentGuardianUserId { get; private set; }
     public long OfficialGuardianUserId { get; private set; }
@@ -20,6 +21,8 @@ public class Patient
     public List<CaregiverRole> Caregivers { get; private set; }
     public List<EmergencyContact> EmergencyContacts { get; private set; }
     public List<PatientInvitation> Invitations { get; private set; }
+    
+    public List<PatientAnnotation> Annotations { get; private set; }
 
     protected Patient()
     {
@@ -27,11 +30,13 @@ public class Patient
         FirstName = string.Empty;
         LastName = string.Empty;
         MedicalConditions = new Dictionary<string, string>();
+        Medications = new Dictionary<string, string>(); //AGREGADO
         BloodType = BloodType.Unknown;
 
         Caregivers = new List<CaregiverRole>();
         EmergencyContacts = new List<EmergencyContact>();
         Invitations = new List<PatientInvitation>();
+        Annotations = new List<PatientAnnotation>();
     }
 
     public Patient(
@@ -41,7 +46,8 @@ public class Patient
         DateOnly birthDate,
         long officialGuardianUserId,
         BloodType bloodType = BloodType.Unknown,
-        Dictionary<string, string>? medicalConditions = null)
+        Dictionary<string, string>? medicalConditions = null, 
+        Dictionary<string, string>? medications = null) //NUEVO
     {
         if (string.IsNullOrWhiteSpace(dni)) throw new ArgumentException("El DNI del paciente es obligatorio.", nameof(dni));
         if (string.IsNullOrWhiteSpace(firstName)) throw new ArgumentException("El nombre es obligatorio.", nameof(firstName));
@@ -54,6 +60,7 @@ public class Patient
         BirthDate = birthDate;
         BloodType = bloodType;
         MedicalConditions = medicalConditions ?? new Dictionary<string, string>();
+        Medications = medications ?? new Dictionary<string, string>(); // <-- ASIGNACION
 
         OfficialGuardianUserId = officialGuardianUserId;
         CurrentGuardianUserId = officialGuardianUserId;
@@ -61,6 +68,7 @@ public class Patient
         Caregivers = new List<CaregiverRole>();
         EmergencyContacts = new List<EmergencyContact>();
         Invitations = new List<PatientInvitation>();
+        Annotations = new List<PatientAnnotation>();
     }
 
     public void AssignGuardShift(long newCurrentGuardianUserId, long actorUserId)
@@ -85,7 +93,8 @@ public class Patient
         string lastName,
         DateOnly birthDate,
         BloodType bloodType,
-        Dictionary<string, string>? medicalConditions)
+        Dictionary<string, string>? medicalConditions,
+        Dictionary<string, string>? medications) // <-- AGREGAMOS
     {
         if (string.IsNullOrWhiteSpace(firstName)) throw new ArgumentException("El nombre es obligatorio.", nameof(firstName));
         if (string.IsNullOrWhiteSpace(lastName)) throw new ArgumentException("El apellido es obligatorio.", nameof(lastName));
@@ -95,6 +104,7 @@ public class Patient
         BirthDate = birthDate;
         BloodType = bloodType;
         MedicalConditions = medicalConditions ?? new Dictionary<string, string>();
+        Medications = medications ?? new Dictionary<string, string>(); // <-- ASIGNACIÓN
     }
 
     public void AddCaregiver(long userId, short relationshipTypeId)
@@ -122,6 +132,16 @@ public class Patient
 
         EmergencyContacts.Add(new EmergencyContact(fullName.Trim(), phoneNumber.Trim(), relationship.Trim()));
     }
+    
+    public void AddAnnotation(long authorUserId, string content)
+    {
+        
+        if (authorUserId != OfficialGuardianUserId && !Caregivers.Any(c => c.UserId == authorUserId))
+            throw new InvalidOperationException("Solo los cuidadores asignados pueden dejar anotaciones.");
+
+        Annotations.Add(new PatientAnnotation(PatientId, authorUserId, content));
+    }
+    
 
     public void RemoveEmergencyContact(long emergencyContactId)
     {

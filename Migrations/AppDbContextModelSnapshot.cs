@@ -103,8 +103,13 @@ namespace foll_backend.Migrations
 
                     b.Property<string>("MedicalConditions")
                         .IsRequired()
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("medical_conditions");
+
+                    b.Property<string>("Medications")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("medications");
 
                     b.Property<long>("OfficialGuardianUserId")
                         .HasColumnType("bigint")
@@ -118,6 +123,41 @@ namespace foll_backend.Migrations
                         .HasDatabaseName("ix_patients_dni");
 
                     b.ToTable("patients", "care");
+                });
+
+            modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientAnnotation", b =>
+                {
+                    b.Property<long>("PatientAnnotationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("patient_annotation_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("PatientAnnotationId"));
+
+                    b.Property<long>("AuthorUserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("author_user_id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("PatientId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("patient_id");
+
+                    b.HasKey("PatientAnnotationId")
+                        .HasName("pk_patient_annotations");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("ix_patient_annotations_patient_id");
+
+                    b.ToTable("patient_annotations", "care");
                 });
 
             modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientInvitation", b =>
@@ -600,6 +640,177 @@ namespace foll_backend.Migrations
                     b.ToTable("users", "iam");
                 });
 
+            modelBuilder.Entity("foll_backend.NotificationCommunication.Domain.Model.Entities.NotificationLog", b =>
+                {
+                    b.Property<long>("NotificationLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("notification_log_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("NotificationLogId"));
+
+                    b.Property<DateTime?>("AcknowledgedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("acknowledged_at");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DataJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("data_json");
+
+                    b.Property<long?>("DeviceEventId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("device_event_id");
+
+                    b.Property<long?>("DeviceId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("device_id");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("error_message");
+
+                    b.Property<string>("NotificationChannel")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("notification_channel");
+
+                    b.Property<string>("NotificationStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("notification_status");
+
+                    b.Property<string>("NotificationType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("notification_type");
+
+                    b.Property<long?>("PatientId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("patient_id");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("provider_message_id");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("read_at");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("NotificationLogId")
+                        .HasName("pk_notification_logs");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_notification_logs_created_at");
+
+                    b.HasIndex("DeviceId")
+                        .HasDatabaseName("ix_notification_logs_device_id");
+
+                    b.HasIndex("NotificationStatus")
+                        .HasDatabaseName("ix_notification_logs_notification_status");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("ix_notification_logs_patient_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_notification_logs_user_id");
+
+                    b.ToTable("notification_logs", "notification");
+                });
+
+            modelBuilder.Entity("foll_backend.NotificationCommunication.Domain.Model.Entities.UserPushToken", b =>
+                {
+                    b.Property<long>("UserPushTokenId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_push_token_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("UserPushTokenId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DeviceName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("device_name");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("platform");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("token");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("UserPushTokenId")
+                        .HasName("pk_user_push_tokens");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_user_push_tokens_user_id");
+
+                    b.HasIndex("UserId", "Token")
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_push_tokens_user_id_token");
+
+                    b.ToTable("user_push_tokens", "notification");
+                });
+
             modelBuilder.Entity("foll_backend.Shared.Domain.Model.Entities.OutboxMessage", b =>
                 {
                     b.Property<long>("OutboxMessageId")
@@ -690,6 +901,16 @@ namespace foll_backend.Migrations
                     b.Navigation("Caregivers");
                 });
 
+            modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientAnnotation", b =>
+                {
+                    b.HasOne("foll_backend.Care.Domain.Model.Entities.Patient", null)
+                        .WithMany("Annotations")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_patient_annotations_patients_patient_id");
+                });
+
             modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.PatientInvitation", b =>
                 {
                     b.HasOne("foll_backend.Care.Domain.Model.Entities.Patient", null)
@@ -714,6 +935,8 @@ namespace foll_backend.Migrations
 
             modelBuilder.Entity("foll_backend.Care.Domain.Model.Entities.Patient", b =>
                 {
+                    b.Navigation("Annotations");
+
                     b.Navigation("EmergencyContacts");
 
                     b.Navigation("Invitations");

@@ -16,4 +16,5 @@ public interface IPatientCommandService
     Task<long> Handle(CreateInvitationCommand command);
     Task Handle(AcceptInvitationCommand command);
     Task Handle(RejectInvitationCommand command);
+    Task Handle(AddPatientAnnotationCommand command);
 }

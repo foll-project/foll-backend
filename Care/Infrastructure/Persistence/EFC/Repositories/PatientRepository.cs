@@ -20,6 +20,7 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
             .Include(p => p.Invitations)
             .Include(p => p.EmergencyContacts)
             .Include(p => p.Caregivers)
+            .Include(p => p.Annotations)
             .FirstOrDefaultAsync(p => p.PatientId == id);
     }
 
@@ -32,6 +33,7 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
             .Include(p => p.Invitations)
             .Include(p => p.EmergencyContacts)
             .Include(p => p.Caregivers)
+            .Include(p => p.Annotations)
             .FirstOrDefaultAsync(p => p.Dni == normalized);
     }
 
@@ -43,6 +45,7 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
             .Include(p => p.Invitations)
             .Include(p => p.EmergencyContacts)
             .Include(p => p.Caregivers)
+            .Include(p => p.Annotations)
             .Where(p => p.OfficialGuardianUserId == userId || p.Caregivers.Any(c => c.UserId == userId))
             .ToListAsync();
     }

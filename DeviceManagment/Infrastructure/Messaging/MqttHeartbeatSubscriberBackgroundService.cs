@@ -41,6 +41,12 @@ public class MqttHeartbeatSubscriberBackgroundService : BackgroundService
             {
                 if (!_mqttClient.IsConnected)
                 {
+                    _logger.LogInformation(
+                        "MQTT subscriber intentando conectar a {Host}:{Port} con ClientId={ClientId}.",
+                        _mqttOptions.Host,
+                        _mqttOptions.Port,
+                        _mqttOptions.ClientId);
+
                     var optionsBuilder = new MqttClientOptionsBuilder()
                         .WithClientId(_mqttOptions.ClientId)
                         .WithTcpServer(_mqttOptions.Host, _mqttOptions.Port);
@@ -59,7 +65,7 @@ public class MqttHeartbeatSubscriberBackgroundService : BackgroundService
                     await _mqttClient.SubscribeAsync(subscribeOptions, stoppingToken);
 
                     _logger.LogInformation(
-                        "Subscriber MQTT conectado a {Host}:{Port} y suscrito a {HeartbeatTopic} y {PowerTopic}.",
+                        "MQTT subscriber conectado a {Host}:{Port} y suscrito a HeartbeatTopic={HeartbeatTopic}, PowerTopic={PowerTopic}.",
                         _mqttOptions.Host,
                         _mqttOptions.Port,
                         _mqttOptions.HeartbeatTopic,
@@ -87,46 +93,110 @@ public class MqttHeartbeatSubscriberBackgroundService : BackgroundService
             var topic = eventArgs.ApplicationMessage.Topic;
             var payload = eventArgs.ApplicationMessage.ConvertPayloadToString();
 
+            _logger.LogDebug("MQTT mensaje recibido. Topic={Topic}", topic);
+            _logger.LogDebug("MQTT payload recibido. Topic={Topic} Payload={Payload}", topic, payload);
+
             if (string.IsNullOrWhiteSpace(payload))
+            {
+                _logger.LogWarning("MQTT mensaje ignorado. Topic={Topic} Reason=Payload vacio.", topic);
                 throw new InvalidOperationException("El mensaje MQTT llegó sin payload.");
+            }
 
             var deviceId = ParseDeviceId(topic);
+            _logger.LogDebug("MQTT deviceId detectado desde topic. Topic={Topic} DeviceId={DeviceId}", topic, deviceId);
+
             using var scope = _serviceScopeFactory.CreateScope();
             var commandService = scope.ServiceProvider.GetRequiredService<IDeviceCommandService>();
 
             if (topic.EndsWith("/heartbeat", StringComparison.OrdinalIgnoreCase))
             {
+                _logger.LogDebug("MQTT topic interpretado como heartbeat. Topic={Topic} DeviceId={DeviceId}", topic, deviceId);
+
                 var heartbeat = JsonSerializer.Deserialize<MqttHeartbeatMessage>(payload, JsonSerializerOptions)
                     ?? throw new InvalidOperationException("No se pudo deserializar el heartbeat MQTT.");
 
+                _logger.LogDebug(
+                    "MQTT heartbeat deserializado correctamente. TopicDeviceId={TopicDeviceId} PayloadDeviceId={PayloadDeviceId} BatteryLevel={BatteryLevel} IsCharging={IsCharging} ReportedAtUtc={ReportedAtUtc} FirmwareVersion={FirmwareVersion}",
+                    deviceId,
+                    heartbeat.DeviceId,
+                    heartbeat.BatteryLevel,
+                    heartbeat.IsCharging,
+                    heartbeat.ReportedAtUtc,
+                    heartbeat.FirmwareVersion);
+
                 if (heartbeat.DeviceId > 0 && heartbeat.DeviceId != deviceId)
+                {
+                    _logger.LogWarning(
+                        "MQTT heartbeat ignorado. Topic={Topic} Reason=Payload device_id {PayloadDeviceId} no coincide con topic deviceId {TopicDeviceId}.",
+                        topic,
+                        heartbeat.DeviceId,
+                        deviceId);
                     throw new InvalidOperationException($"El device_id del payload ({heartbeat.DeviceId}) no coincide con el tópico ({deviceId}).");
+                }
+
+                var reportedAtUtc = heartbeat.ReportedAtUtc ?? DateTime.UtcNow;
+                _logger.LogDebug(
+                    "MQTT llamando RegisterDeviceTelemetry. DeviceId={DeviceId} BatteryLevel={BatteryLevel} IsCharging={IsCharging} ReportedAtUtc={ReportedAtUtc} FirmwareVersion={FirmwareVersion}",
+                    deviceId,
+                    heartbeat.BatteryLevel,
+                    heartbeat.IsCharging,
+                    reportedAtUtc,
+                    heartbeat.FirmwareVersion);
 
                 await commandService.Handle(new RegisterDeviceTelemetryCommand(
                     deviceId,
                     heartbeat.BatteryLevel,
                     heartbeat.IsCharging,
-                    heartbeat.ReportedAtUtc ?? DateTime.UtcNow,
+                    reportedAtUtc,
                     heartbeat.FirmwareVersion));
+
+                _logger.LogDebug("MQTT heartbeat procesado por RegisterDeviceTelemetry. DeviceId={DeviceId}", deviceId);
                 return;
             }
 
             if (topic.EndsWith("/power", StringComparison.OrdinalIgnoreCase))
             {
+                _logger.LogDebug("MQTT topic interpretado como power. Topic={Topic} DeviceId={DeviceId}", topic, deviceId);
+
                 var power = JsonSerializer.Deserialize<MqttPowerMessage>(payload, JsonSerializerOptions)
                     ?? throw new InvalidOperationException("No se pudo deserializar el evento MQTT de power.");
 
+                _logger.LogDebug(
+                    "MQTT power deserializado correctamente. TopicDeviceId={TopicDeviceId} PayloadDeviceId={PayloadDeviceId} IsActive={IsActive} ReportedAtUtc={ReportedAtUtc}",
+                    deviceId,
+                    power.DeviceId,
+                    power.IsActive,
+                    power.ReportedAtUtc);
+
                 if (power.DeviceId > 0 && power.DeviceId != deviceId)
+                {
+                    _logger.LogWarning(
+                        "MQTT power ignorado. Topic={Topic} Reason=Payload device_id {PayloadDeviceId} no coincide con topic deviceId {TopicDeviceId}.",
+                        topic,
+                        power.DeviceId,
+                        deviceId);
                     throw new InvalidOperationException($"El device_id del payload ({power.DeviceId}) no coincide con el tópico ({deviceId}).");
+                }
+
+                var reportedAtUtc = power.ReportedAtUtc ?? DateTime.UtcNow;
+                _logger.LogDebug(
+                    "MQTT llamando UpdateDevicePowerState. DeviceId={DeviceId} IsActive={IsActive} ReportedAtUtc={ReportedAtUtc}",
+                    deviceId,
+                    power.IsActive,
+                    reportedAtUtc);
 
                 await commandService.Handle(new UpdateDevicePowerStateCommand(
                     deviceId,
                     power.IsActive,
-                    power.ReportedAtUtc ?? DateTime.UtcNow));
+                    reportedAtUtc));
+
+                _logger.LogDebug("MQTT power procesado por UpdateDevicePowerState. DeviceId={DeviceId}", deviceId);
                 return;
             }
 
-            _logger.LogDebug("Tópico MQTT ignorado: {Topic}", topic);
+            _logger.LogInformation(
+                "MQTT mensaje ignorado. Topic={Topic} Reason=El topic no termina en /heartbeat ni /power.",
+                topic);
         }
         catch (Exception ex)
         {

@@ -52,7 +52,7 @@ public class UserIntegrationTests
     public async Task RegisterUser_Integration_SavesCorrectlyInDatabase()
     {
         // Arrange
-        var command = new RegisterCommand("pepito@correo.com", "contra246!", "Pepe", "Perez", "123456789");
+        var command = new RegisterCommand("pepito@correo.com", "contra246!", "Juan", "Perez", "123456789");
 
         // Act - Probamos toda la funcionalidad junta
         await _service.Handle(command);

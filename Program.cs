@@ -81,7 +81,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://localhost:5173",
                 "http://localhost:3000",
-                "http://localhost:4200")
+                "http://localhost:4200",
+                "https://foll-frontend.vercel.app")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

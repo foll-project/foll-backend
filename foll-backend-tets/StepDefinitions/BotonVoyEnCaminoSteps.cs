@@ -47,8 +47,8 @@ public class BotonVoyEnCaminoSteps
         WhenElCuidadorPresionaElBotonVoyEnCamino(nombreCuidador);
     }
 
-    [Then(@"el sistema actualiza el estado del incidente a ""(.*)""")]
-    public void ThenElSistemaActualizaElEstadoDelIncidenteA(string estadoEsperado)
+    [Then(@"el sistema actualiza el estado del incidente a ""(.*)"" en BotonVoyEnCamino")]
+    public void ThenElSistemaActualizaElEstadoDelIncidenteAEnBotonVoyEnCamino(string estadoEsperado)
     {
         Assert.AreEqual(estadoEsperado, _estadoIncidenteResultado);
     }

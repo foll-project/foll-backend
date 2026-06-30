@@ -3,6 +3,7 @@ using foll_backend.EmergencyAnalytics.Domain.Model.Entities;
 using foll_backend.EmergencyAnalytics.Domain.Model.Queries;
 using foll_backend.EmergencyAnalytics.Domain.Services;
 using foll_backend.EmergencyAnalytics.Interfaces.REST.Resources;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -51,6 +52,25 @@ public class EmergencyIncidentsController : ControllerBase
         try
         {
             var incidents = await _queryService.Handle(new ListFallIncidentHistoryByPatientIdQuery(userId, patientId));
+            return Ok(incidents.Select(ToResponse));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("history/patient/{patientId:long}/monthly")]
+    public async Task<IActionResult> GetMonthlyHistoryByPatient([FromRoute] long patientId, [FromQuery] int month, [FromQuery] int year, [FromServices] IMediator mediator)
+    {
+        var userId = GetUserIdOrThrow();
+
+        if (month < 1 || month > 12 || year < 2000 || year > 2100)
+            return BadRequest(new { message = "Mes o año inválidos." });
+
+        try
+        {
+            var incidents = await mediator.Send(new GetPatientFallsByMonthQuery(userId, patientId, month, year));
             return Ok(incidents.Select(ToResponse));
         }
         catch (Exception ex)

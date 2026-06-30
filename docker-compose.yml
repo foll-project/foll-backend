@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  basededatos:
+    image: postgres:15
+    container_name: foll_postgres_dev
+    restart: always
+    environment:
+      POSTGRES_USER: foll
+      POSTGRES_PASSWORD: foll
+      POSTGRES_DB: foll_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - foll_data:/var/lib/postgresql/data
+
+  mqtt_broker:
+    image: eclipse-mosquitto:1.6.15
+    container_name: foll_mqtt_dev
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+
+volumes:
+  foll_data:

@@ -159,6 +159,32 @@ public class PatientsController : ControllerBase
         }
     }
 
+    [HttpDelete("{id:long}")]
+    public async Task<IActionResult> Delete([FromRoute] long id)
+    {
+        var userId = GetUserIdOrThrow();
+
+        try
+        {
+            var command = new DeletePatientCommand(userId, id);
+            await _commandService.Handle(command);
+            
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "Ocurrió un error interno al intentar eliminar al paciente." });
+        }
+    }
+
     [HttpDelete("{id:long}/emergency-contacts/{contactId:long}")]
     public async Task<IActionResult> RemoveEmergencyContact([FromRoute] long id, [FromRoute] long contactId)
     {

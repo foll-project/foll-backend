@@ -7,4 +7,5 @@ public interface IPatientRepository : IBaseRepository<Patient>
 {
     Task<Patient?> FindByDniAsync(string dni);
     Task<IEnumerable<Patient>> ListForUserAsync(long userId);
+    Task<IEnumerable<long>> GetPatientIdsByOfficialGuardianAsync(long officialGuardianUserId);
 }

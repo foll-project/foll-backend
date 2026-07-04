@@ -20,6 +20,15 @@ public class DeviceRepository : BaseRepository<DeviceEntity>, IDeviceRepository
             .FirstOrDefaultAsync(d => d.AssignedPatientId == patientId);
     }
 
+    public async Task<IEnumerable<DeviceEntity>> FindByPatientIdsAsync(IEnumerable<long> patientIds)
+    {
+        if (patientIds == null || !patientIds.Any()) return Array.Empty<DeviceEntity>();
+
+        return await Context.Set<DeviceEntity>()
+            .Where(d => d.AssignedPatientId.HasValue && patientIds.Contains(d.AssignedPatientId.Value))
+            .ToListAsync();
+    }
+
     public async Task<IReadOnlyCollection<long>> ListMonitoredActiveDeviceIdsAsync()
     {
         return await Context.Set<DeviceEntity>()

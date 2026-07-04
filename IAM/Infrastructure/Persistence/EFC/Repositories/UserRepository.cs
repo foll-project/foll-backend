@@ -25,4 +25,13 @@ public class UserRepository : BaseRepository<User>, IUserRepository
         var normalized = email.Trim().ToLowerInvariant();
         return await Context.Users.FirstOrDefaultAsync(u => u.Email == normalized);
     }
+
+    public async Task DeleteByUserIdAsync(long userId)
+    {
+        var user = await Context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+        if (user != null)
+        {
+            Context.Users.Remove(user);
+        }
+    }
 }

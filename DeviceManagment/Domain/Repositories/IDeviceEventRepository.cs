@@ -7,4 +7,5 @@ namespace foll_backend.DeviceManagment.Domain.Repositories;
 public interface IDeviceEventRepository : IBaseRepository<DeviceEvent>
 {
     Task<DeviceEvent?> FindLatestUnresolvedByDeviceIdAndTypeAsync(long deviceId, DeviceEventType eventType);
+    Task DeleteByDeviceIdAsync(long deviceId);
 }

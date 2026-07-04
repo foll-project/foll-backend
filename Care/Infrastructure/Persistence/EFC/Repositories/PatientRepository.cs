@@ -49,4 +49,14 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
             .Where(p => p.OfficialGuardianUserId == userId || p.Caregivers.Any(c => c.UserId == userId))
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<long>> GetPatientIdsByOfficialGuardianAsync(long officialGuardianUserId)
+    {
+        if (officialGuardianUserId <= 0) return Array.Empty<long>();
+
+        return await Context.Set<Patient>()
+            .Where(p => p.OfficialGuardianUserId == officialGuardianUserId)
+            .Select(p => p.PatientId)
+            .ToListAsync();
+    }
 }

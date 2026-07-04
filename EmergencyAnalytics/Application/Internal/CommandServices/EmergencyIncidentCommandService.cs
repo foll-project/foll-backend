@@ -227,4 +227,10 @@ public class EmergencyIncidentCommandService : IEmergencyIncidentCommandService
         return await _fallTypeRepository.FindByIdAsync(fallTypeId)
             ?? throw new InvalidOperationException($"No existe el tipo de caída con id {fallTypeId}.");
     }
+
+    public async Task Handle(DeleteEmergenciesByAccountCommand command)
+    {
+        await _incidentRepository.DeleteByPatientIdsAsync(command.PatientIds);
+        await _unitOfWork.CompleteAsync();
+    }
 }

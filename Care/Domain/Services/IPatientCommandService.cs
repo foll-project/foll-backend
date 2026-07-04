@@ -18,4 +18,5 @@ public interface IPatientCommandService
     Task Handle(RejectInvitationCommand command);
     Task Handle(AddPatientAnnotationCommand command);
     Task Handle(DeletePatientCommand command);
+    Task<IEnumerable<long>> Handle(DeletePatientsByAccountCommand command);
 }

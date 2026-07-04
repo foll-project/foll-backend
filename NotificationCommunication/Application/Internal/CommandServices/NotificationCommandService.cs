@@ -122,6 +122,12 @@ public class NotificationCommandService : INotificationCommandService
         await _unitOfWork.CompleteAsync();
     }
 
+    public async Task Handle(DeleteNotificationsByAccountCommand command)
+    {
+        await _notificationLogRepository.DeleteByUserIdAsync(command.UserId);
+        await _unitOfWork.CompleteAsync();
+    }
+
     private static IReadOnlyDictionary<string, string> ParseData(string? dataJson)
     {
         if (string.IsNullOrWhiteSpace(dataJson)) return new Dictionary<string, string>();

@@ -52,4 +52,11 @@ public class AuthenticationController : ControllerBase
 
         return Ok(response);
     }
+
+    [HttpDelete("{userId}")]
+    public async Task<IActionResult> DeleteAccount(long userId, [FromBody] DeleteAccountResource resource)
+    {
+        // TODO: Implementar llamada a comando de eliminación
+        return Ok();
+    }
 }

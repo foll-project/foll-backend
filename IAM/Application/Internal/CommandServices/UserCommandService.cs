@@ -38,4 +38,10 @@ public class UserCommandService : IUserCommandService
 
         await _unitOfWork.CompleteAsync();
     }
+
+    public async Task Handle(DeleteaccountCommand command)
+    {
+        // TODO: Implementar lógica de eliminación
+        await Task.CompletedTask;
+    }
 }

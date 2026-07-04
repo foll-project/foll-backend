@@ -9,4 +9,5 @@ public interface IEmergencyIncidentRepository : IBaseRepository<EmergencyInciden
     Task<EmergencyIncident?> FindActiveByPatientIdAsync(long patientId);
     Task<EmergencyIncident?> FindByIdWithFallTypeAsync(long incidentId);
     Task<IReadOnlyCollection<EmergencyIncident>> ListByPatientIdAsync(long patientId);
+    Task DeleteByPatientIdsAsync(IEnumerable<long> patientIds);
 }

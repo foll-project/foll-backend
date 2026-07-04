@@ -22,4 +22,18 @@ public class DeviceEventRepository : BaseRepository<DeviceEvent>, IDeviceEventRe
             .OrderByDescending(e => e.CreatedAt)
             .FirstOrDefaultAsync();
     }
+
+    public async Task DeleteByDeviceIdAsync(long deviceId)
+    {
+        if (deviceId <= 0) return;
+
+        var events = await Context.Set<DeviceEvent>()
+            .Where(e => e.DeviceId == deviceId)
+            .ToListAsync();
+
+        if (events.Any())
+        {
+            Context.Set<DeviceEvent>().RemoveRange(events);
+        }
+    }
 }

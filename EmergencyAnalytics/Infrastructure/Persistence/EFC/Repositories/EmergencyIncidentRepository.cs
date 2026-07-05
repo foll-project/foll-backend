@@ -44,6 +44,15 @@ public class EmergencyIncidentRepository : BaseRepository<EmergencyIncident>, IE
             .FirstOrDefaultAsync(i => i.EmergencyIncidentId == incidentId);
     }
 
+    public async Task<EmergencyIncident?> FindByIncidentKeyWithFallTypeAsync(Guid incidentKey)
+    {
+        if (incidentKey == Guid.Empty) return null;
+
+        return await Context.Set<EmergencyIncident>()
+            .Include(i => i.FallType)
+            .FirstOrDefaultAsync(i => i.IncidentKey == incidentKey);
+    }
+
     public async Task<IReadOnlyCollection<EmergencyIncident>> ListByPatientIdAsync(long patientId)
     {
         if (patientId <= 0) return Array.Empty<EmergencyIncident>();

@@ -37,7 +37,7 @@ public class EmergencyIncidentClosedNotificationHandler : INotificationHandler<E
         try
         {
             var recipients = await _patientNotificationAccessService.GetRecipientsForPatientAsync(notification.PatientId);
-            if (recipients.Count == 0) return;
+            if (recipients is null || recipients.PushRecipients.Count == 0) return;
 
             string? closedByName = null;
             if (notification.ClosedByUserId is > 0)
@@ -59,7 +59,7 @@ public class EmergencyIncidentClosedNotificationHandler : INotificationHandler<E
                 notification.Observation,
                 notification.FallTypeName);
 
-            var groups = recipients
+            var groups = recipients.PushRecipients
                 .Select(recipient => NotificationsHub.GetUserGroupName(recipient.UserId))
                 .Distinct()
                 .ToList();

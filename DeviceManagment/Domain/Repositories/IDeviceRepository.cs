@@ -6,5 +6,6 @@ namespace foll_backend.DeviceManagment.Domain.Repositories;
 public interface IDeviceRepository : IBaseRepository<DeviceEntity>
 {
     Task<DeviceEntity?> FindByAssignedPatientIdAsync(long patientId);
+    Task<IEnumerable<DeviceEntity>> FindByPatientIdsAsync(IEnumerable<long> patientIds);
     Task<IReadOnlyCollection<long>> ListMonitoredActiveDeviceIdsAsync();
 }

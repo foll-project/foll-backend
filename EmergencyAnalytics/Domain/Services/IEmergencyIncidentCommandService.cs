@@ -9,4 +9,5 @@ public interface IEmergencyIncidentCommandService
     Task Handle(MarkFallIncidentFalsePositiveCommand command);
     Task Handle(ResolveFallIncidentCommand command);
     Task Handle(UpdateEmergencyIncidentObservationCommand command);
+    Task Handle(DeleteEmergenciesByAccountCommand command);
 }

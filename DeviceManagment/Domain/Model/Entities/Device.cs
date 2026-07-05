@@ -58,6 +58,10 @@ public class Device : EntityWithDomainEvents
         ConnectivityStatus = null;
         MonitoringStartedAt = null;
         LastConnectivityChangeAt = null;
+        IsCharging = null;
+        Status = DeviceStatus.Active;
+        LastHeartbeatAt= null;
+        CurrentBatteryLevel=null;
     }
 
     public void UpdateFirmware(string firmwareVersion)

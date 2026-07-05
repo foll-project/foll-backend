@@ -54,4 +54,18 @@ public class EmergencyIncidentRepository : BaseRepository<EmergencyIncident>, IE
             .OrderByDescending(i => i.OpenedAt)
             .ToListAsync();
     }
+
+    public async Task DeleteByPatientIdsAsync(IEnumerable<long> patientIds)
+    {
+        if (patientIds == null || !patientIds.Any()) return;
+
+        var incidents = await Context.Set<EmergencyIncident>()
+            .Where(i => patientIds.Contains(i.PatientId))
+            .ToListAsync();
+
+        if (incidents.Any())
+        {
+            Context.Set<EmergencyIncident>().RemoveRange(incidents);
+        }
+    }
 }

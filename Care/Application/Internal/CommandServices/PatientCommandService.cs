@@ -250,6 +250,19 @@ public class PatientCommandService : IPatientCommandService
         await _unitOfWork.CompleteAsync();
     }
 
+    public async Task<IEnumerable<long>> Handle(DeletePatientsByAccountCommand command)
+    {
+        var patientIds = await _patientRepository.GetPatientIdsByOfficialGuardianAsync(command.UserId);
+        
+        foreach (var patientId in patientIds)
+        {
+            var deleteCommand = new DeletePatientCommand(command.UserId, patientId);
+            await Handle(deleteCommand);
+        }
+
+        return patientIds;
+    }
+
     private async Task<string> ResolveUserNameAsync(long userId)
     {
         var user = await _userInfoService.FindByIdAsync(userId);

@@ -417,4 +417,27 @@ public class DeviceCommandService : IDeviceCommandService
             eventType,
             resolvedAtUtc);
     }
+
+    public async Task<IEnumerable<long>> Handle(UnlinkDevicesByAccountCommand command)
+    {
+        var devices = await _deviceRepository.FindByPatientIdsAsync(command.PatientIds);
+        var affectedDeviceIds = new List<long>();
+
+        foreach (var device in devices)
+        {
+            device.Unassign();
+            _deviceRepository.Update(device);
+            
+            await _deviceEventRepository.DeleteByDeviceIdAsync(device.DeviceId);
+            
+            affectedDeviceIds.Add(device.DeviceId);
+        }
+
+        if (affectedDeviceIds.Any())
+        {
+            await _unitOfWork.CompleteAsync();
+        }
+
+        return affectedDeviceIds;
+    }
 }

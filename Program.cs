@@ -74,12 +74,14 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
-/*builder.Services.AddCors(options =>
+builder.Services.AddCors(options =>
 {
     options.AddPolicy(LocalFrontendCorsPolicy, policy =>
     {
         policy.WithOrigins(
+                "http://localhost",
                 "http://localhost:5173",
+                "http://localhost:80",
                 "http://localhost:3000",
                 "http://localhost:4200",
                 "https://foll-frontend.vercel.app")
@@ -87,7 +89,7 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
             .AllowAnyMethod()
             .AllowCredentials();
     });
-});*/
+});
 
 builder.Services.Configure<MqttOptions>(builder.Configuration.GetSection("Mqtt"));
 builder.Services.Configure<DeviceMonitoringOptions>(builder.Configuration.GetSection("DeviceMonitoring"));

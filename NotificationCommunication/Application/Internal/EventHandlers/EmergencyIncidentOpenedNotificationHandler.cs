@@ -27,12 +27,19 @@ public class EmergencyIncidentOpenedNotificationHandler : INotificationHandler<E
             ["patientId"] = notification.PatientId.ToString(),
             ["fallTypeId"] = notification.FallTypeId.ToString(),
             ["fallTypeName"] = notification.FallTypeName,
+            ["fallType"] = notification.FallTypeName,
             ["severityLevel"] = notification.SeverityLevel.ToString(),
             ["openedAtUtc"] = notification.OpenedAtUtc.ToString("O"),
             ["aiConfidenceScore"] = notification.AiConfidenceScore?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
             ["latitude"] = notification.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
-            ["longitude"] = notification.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty
+            ["longitude"] = notification.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            ["address"] = notification.Address ?? string.Empty,
+            ["location"] = notification.Address ?? string.Empty
         });
+
+        var locationHint = string.IsNullOrWhiteSpace(notification.Address)
+            ? string.Empty
+            : $" Ubicacion: {notification.Address}.";
 
         await _notificationCommandService.Handle(new CreateNotificationFromEventCommand(
             notification.PatientId,
@@ -40,7 +47,7 @@ public class EmergencyIncidentOpenedNotificationHandler : INotificationHandler<E
             null,
             NotificationType.FallDetected,
             "Caida detectada",
-            $"Se detecto una posible caida asociada al dispositivo {notification.DeviceId}.",
+            $"Se detecto una posible caida ({notification.FallTypeName}) asociada al dispositivo {notification.DeviceId}.{locationHint}",
             dataJson));
     }
 }

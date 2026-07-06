@@ -8,4 +8,5 @@ public record RegisterFallDetectedCommand(
     decimal? AiConfidenceScore,
     decimal? Latitude,
     decimal? Longitude,
+    string? Address,
     string? RawPayload);

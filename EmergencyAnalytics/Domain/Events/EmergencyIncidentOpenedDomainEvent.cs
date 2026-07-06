@@ -10,7 +10,8 @@ public record EmergencyIncidentOpenedDomainEvent(
     DateTime OpenedAtUtc,
     decimal? AiConfidenceScore,
     decimal? Latitude,
-    decimal? Longitude) : IDomainEvent
+    decimal? Longitude,
+    string? Address) : IDomainEvent
 {
     public DateTime OccurredOn => OpenedAtUtc;
 }

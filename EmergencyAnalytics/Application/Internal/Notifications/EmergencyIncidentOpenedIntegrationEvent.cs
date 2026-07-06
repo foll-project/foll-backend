@@ -13,4 +13,5 @@ public record EmergencyIncidentOpenedIntegrationEvent(
     DateTime OpenedAtUtc,
     decimal? AiConfidenceScore,
     decimal? Latitude,
-    decimal? Longitude) : INotification;
+    decimal? Longitude,
+    string? Address) : INotification;

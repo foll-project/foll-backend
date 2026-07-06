@@ -53,6 +53,7 @@ public class EmergencyIncidentCommandService : IEmergencyIncidentCommandService
                 command.AiConfidenceScore,
                 command.Latitude,
                 command.Longitude,
+                command.Address,
                 command.RawPayload);
 
             await _incidentRepository.AddAsync(incident);
@@ -65,6 +66,7 @@ public class EmergencyIncidentCommandService : IEmergencyIncidentCommandService
                 command.AiConfidenceScore,
                 command.Latitude,
                 command.Longitude,
+                command.Address,
                 command.RawPayload);
 
             _incidentRepository.Update(incident);
@@ -149,7 +151,8 @@ public class EmergencyIncidentCommandService : IEmergencyIncidentCommandService
                             opened.OpenedAtUtc,
                             opened.AiConfidenceScore,
                             opened.Latitude,
-                            opened.Longitude),
+                            opened.Longitude,
+                            opened.Address),
                         opened.OccurredOn));
                     break;
 

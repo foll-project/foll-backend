@@ -22,6 +22,7 @@ public class EmergencyIncident : EntityWithDomainEvents
     public decimal? AiConfidenceScore { get; private set; }
     public decimal? Latitude { get; private set; }
     public decimal? Longitude { get; private set; }
+    public string? Address { get; private set; }
     public EmergencyCancellationReason? CancellationReason { get; private set; }
     public string? FinalObservation { get; private set; }
     public string? LastSourcePayload { get; private set; }
@@ -39,6 +40,7 @@ public class EmergencyIncident : EntityWithDomainEvents
         decimal? aiConfidenceScore,
         decimal? latitude,
         decimal? longitude,
+        string? address,
         string? sourcePayload)
     {
         if (deviceId <= 0) throw new ArgumentOutOfRangeException(nameof(deviceId));
@@ -55,6 +57,7 @@ public class EmergencyIncident : EntityWithDomainEvents
         AiConfidenceScore = aiConfidenceScore;
         Latitude = latitude;
         Longitude = longitude;
+        Address = NormalizeAddress(address);
         LastSourcePayload = NormalizePayload(sourcePayload);
     }
 
@@ -66,6 +69,7 @@ public class EmergencyIncident : EntityWithDomainEvents
         decimal? aiConfidenceScore,
         decimal? latitude,
         decimal? longitude,
+        string? address,
         string? sourcePayload)
     {
         var incident = new EmergencyIncident(
@@ -76,6 +80,7 @@ public class EmergencyIncident : EntityWithDomainEvents
             aiConfidenceScore,
             latitude,
             longitude,
+            address,
             sourcePayload);
 
         incident.RaiseDomainEvent(new EmergencyIncidentOpenedDomainEvent(
@@ -86,12 +91,13 @@ public class EmergencyIncident : EntityWithDomainEvents
             incident.OpenedAt,
             incident.AiConfidenceScore,
             incident.Latitude,
-            incident.Longitude));
+            incident.Longitude,
+            incident.Address));
 
         return incident;
     }
 
-    public void RefreshDetection(short fallTypeId, DateTime reportedAtUtc, decimal? aiConfidenceScore, decimal? latitude, decimal? longitude, string? sourcePayload)
+    public void RefreshDetection(short fallTypeId, DateTime reportedAtUtc, decimal? aiConfidenceScore, decimal? latitude, decimal? longitude, string? address, string? sourcePayload)
     {
         EnsureOpenIncident();
         if (fallTypeId <= 0) throw new ArgumentOutOfRangeException(nameof(fallTypeId));
@@ -104,6 +110,7 @@ public class EmergencyIncident : EntityWithDomainEvents
         AiConfidenceScore = aiConfidenceScore;
         Latitude = latitude;
         Longitude = longitude;
+        Address = NormalizeAddress(address);
         LastSourcePayload = NormalizePayload(sourcePayload);
     }
 
@@ -198,6 +205,11 @@ public class EmergencyIncident : EntityWithDomainEvents
     {
         if (Status == EmergencyIncidentStatus.Open)
             throw new InvalidOperationException("Solo se pueden agregar observaciones finales a incidentes cerrados.");
+    }
+
+    private static string? NormalizeAddress(string? address)
+    {
+        return string.IsNullOrWhiteSpace(address) ? null : address.Trim();
     }
 
     private static string? NormalizePayload(string? payload)

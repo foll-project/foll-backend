@@ -187,6 +187,7 @@ public class EmergencyIncidentsController : ControllerBase
             aiConfidenceScore = incident.AiConfidenceScore,
             latitude = incident.Latitude,
             longitude = incident.Longitude,
+            address = incident.Address,
             cancellationReason = incident.CancellationReason?.ToString(),
             finalObservation = incident.FinalObservation
         };

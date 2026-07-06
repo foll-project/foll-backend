@@ -44,6 +44,7 @@ public class EmergencyIncidentConfiguration : IEntityTypeConfiguration<Emergency
         builder.Property(e => e.AiConfidenceScore).HasColumnType("numeric(5,4)");
         builder.Property(e => e.Latitude).HasColumnType("numeric(9,6)");
         builder.Property(e => e.Longitude).HasColumnType("numeric(9,6)");
+        builder.Property(e => e.Address).HasMaxLength(500);
         builder.Property(e => e.CancellationReason)
             .IsRequired(false)
             .HasConversion(

@@ -111,6 +111,7 @@ public class EmergencyAnalyticsMqttSubscriberBackgroundService : BackgroundServi
                     message.AiConfidenceScore,
                     message.Latitude,
                     message.Longitude,
+                    message.Address,
                     payload));
                 return;
             }

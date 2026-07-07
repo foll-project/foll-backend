@@ -31,7 +31,7 @@ public class SignalRDeviceTelemetryRealtimePublisher : IDeviceTelemetryRealtimeP
         try
         {
             var recipients = await _patientNotificationAccessService.GetRecipientsForPatientAsync(snapshot.PatientId);
-            if (recipients.Count == 0) return;
+            if (recipients is null || recipients.PushRecipients.Count == 0) return;
 
             var payload = new DeviceTelemetryRealtimeMessage(
                 snapshot.DeviceId,
@@ -41,7 +41,7 @@ public class SignalRDeviceTelemetryRealtimePublisher : IDeviceTelemetryRealtimeP
                 snapshot.IsOnline,
                 snapshot.LastHeartbeatAtUtc);
 
-            var groups = recipients
+            var groups = recipients.PushRecipients
                 .Select(recipient => NotificationsHub.GetUserGroupName(recipient.UserId))
                 .Distinct()
                 .ToList();

@@ -40,6 +40,7 @@ using foll_backend.IAM.Infrastructure.Tokens;
 using foll_backend.NotificationCommunication.Application.ACL;
 using foll_backend.NotificationCommunication.Application.Internal.CommandServices;
 using foll_backend.NotificationCommunication.Application.Internal.QueryServices;
+using foll_backend.NotificationCommunication.Application.Internal.Services;
 using foll_backend.NotificationCommunication.Application.OutboundServices;
 using foll_backend.NotificationCommunication.Domain.Repositories;
 using foll_backend.NotificationCommunication.Domain.Services;
@@ -96,6 +97,7 @@ builder.Services.Configure<DeviceMonitoringOptions>(builder.Configuration.GetSec
 builder.Services.Configure<EmergencyAnalyticsMqttOptions>(builder.Configuration.GetSection("EmergencyAnalyticsMqtt"));
 builder.Services.Configure<OutboxOptions>(builder.Configuration.GetSection("Outbox"));
 builder.Services.Configure<NotificationOptions>(builder.Configuration.GetSection("Notifications"));
+builder.Services.Configure<SmsOptions>(builder.Configuration.GetSection("Sms"));
 builder.Services.Configure<FirebaseOptions>(builder.Configuration.GetSection("Firebase"));
 
 builder.Services.AddSwaggerGen(options =>
@@ -195,6 +197,8 @@ builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
 builder.Services.AddScoped<IDeviceEventRepository, DeviceEventRepository>();
 builder.Services.AddScoped<IOutboxMessageRepository, OutboxMessageRepository>();
 builder.Services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
+builder.Services.AddScoped<ISmsNotificationLogRepository, SmsNotificationLogRepository>();
+builder.Services.AddScoped<IEmergencyLocationAccessLinkRepository, EmergencyLocationAccessLinkRepository>();
 builder.Services.AddScoped<IUserPushTokenRepository, UserPushTokenRepository>();
 
 builder.Services.AddScoped<IPatientAccessService, PatientAccessService>();
@@ -206,6 +210,7 @@ builder.Services.AddScoped<IDeviceQueryService, DeviceQueryService>();
 builder.Services.AddScoped<IPatientNotificationAccessService, PatientNotificationAccessService>();
 builder.Services.AddScoped<INotificationRealtimePublisher, SignalRNotificationRealtimePublisher>();
 builder.Services.AddScoped<IDeviceTelemetryRealtimePublisher, SignalRDeviceTelemetryRealtimePublisher>();
+builder.Services.AddScoped<IEmergencyLocationLinkService, EmergencyLocationLinkService>();
 builder.Services.AddScoped<INotificationCommandService, NotificationCommandService>();
 builder.Services.AddScoped<INotificationQueryService, NotificationQueryService>();
 builder.Services.AddScoped<IUserPushTokenCommandService, UserPushTokenCommandService>();
@@ -220,7 +225,16 @@ builder.Services.AddScoped<IPushNotificationSender>(serviceProvider =>
 
     return ActivatorUtilities.CreateInstance<FakePushNotificationSender>(serviceProvider);
 });
-builder.Services.AddScoped<ISmsNotificationSender, FakeSmsNotificationSender>();
+builder.Services.AddScoped<ISmsNotificationSender>(serviceProvider =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var smsProvider = configuration["Sms:Provider"] ?? configuration["Notifications:SmsProvider"] ?? "Fake";
+
+    if (smsProvider.Equals("Twilio", StringComparison.OrdinalIgnoreCase))
+        return ActivatorUtilities.CreateInstance<TwilioSmsNotificationSender>(serviceProvider);
+
+    return ActivatorUtilities.CreateInstance<FakeSmsNotificationSender>(serviceProvider);
+});
 
 builder.Services.AddScoped<IEmergencyIncidentRepository, EmergencyIncidentRepository>();
 builder.Services.AddScoped<IFallTypeRepository, FallTypeRepository>();

@@ -243,6 +243,7 @@ builder.Services.AddScoped<IDeviceIncidentAssignmentService, DeviceIncidentAssig
 builder.Services.AddScoped<IPatientIncidentAccessService, PatientIncidentAccessService>();
 builder.Services.AddScoped<IEmergencyIncidentCommandService, EmergencyIncidentCommandService>();
 builder.Services.AddScoped<IEmergencyIncidentQueryService, EmergencyIncidentQueryService>();
+builder.Services.AddSingleton<IEmergencyAnalyticsMqttPublisher, EmergencyAnalyticsMqttPublisher>();
 
 builder.Services.AddHostedService<MqttHeartbeatSubscriberBackgroundService>();
 builder.Services.AddHostedService<DeviceConnectivityMonitorBackgroundService>();
@@ -281,12 +282,13 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-app.UseCors(LocalFrontendCorsPolicy);
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<NotificationsHub>("/hubs/notifications");
+app.MapHub<NotificationsHub>("/hubs/notifications")
+    .RequireCors(LocalFrontendCorsPolicy);
 
 app.Run();

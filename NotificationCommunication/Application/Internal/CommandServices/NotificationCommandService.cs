@@ -326,6 +326,6 @@ public class NotificationCommandService : INotificationCommandService
 
     private static string BuildEmergencySmsMessage(string locationUrl)
     {
-        return $"Foll alerta: posible caida detectada. Ver ubicacion temporal: {locationUrl}";
+        return $"Foll alerta: posible caida detectada. Ubicacion temporal: {locationUrl}";
     }
 }

@@ -5,7 +5,7 @@ Como cuidador principal, quiero poder agregar contactos de emergencia que no usa
         Given que el sistema ha confirmado una emergencia del adulto mayor
         And que el contacto de emergencia no tiene un token de notificación válido
         When se dispara la notificación de emergencia
-        Then el sistema envía un SMS con un mensaje de auxilio y un enlace web temporal con la ubicación del incidente
+        Then el sistema envía un SMS con un mensaje de auxilio y un enlace web temporal con la ubicación del incidentee
 
     Scenario: Envío de notificación a un contacto con la aplicación instalada
         Given que el sistema ha confirmado una emergencia del adulto mayor

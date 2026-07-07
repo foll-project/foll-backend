@@ -54,7 +54,7 @@ public class EnvioAutomaticoSmsSteps
         }
     }
 
-    [Then(@"el sistema envía un SMS con un mensaje de auxilio y un enlace web temporal con la ubicación del incidente")]
+    [Then(@"el sistema envía un SMS con un mensaje de auxilio y un enlace web temporal con la ubicación del incidentee")]
     public void ThenElSistemaEnviaUnSmsConMensajeDeAuxilioYEnlaceWebTemporal()
     {
         Assert.IsTrue(_smsEnviado, "El sistema falló al intentar enviar el SMS de respaldo.");

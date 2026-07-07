@@ -12,37 +12,37 @@ public class PatientNotificationAccessService : IPatientNotificationAccessServic
         _patientNotificationAcl = patientNotificationAcl;
     }
 
-    public async Task<IReadOnlyCollection<PatientNotificationRecipientDto>> GetRecipientsForPatientAsync(long patientId)
+    public async Task<PatientNotificationRecipientsDto?> GetRecipientsForPatientAsync(long patientId)
     {
-        if (patientId <= 0) return Array.Empty<PatientNotificationRecipientDto>();
+        if (patientId <= 0) return null;
 
         var access = await _patientNotificationAcl.GetPatientNotificationAccessByIdAsync(patientId);
-        if (access is null) return Array.Empty<PatientNotificationRecipientDto>();
+        if (access is null) return null;
 
-        var caregiverUserIds = access.CaregiverUserIds
-            .Where(userId => userId > 0)
-            .ToHashSet();
+        var pushRecipients = access.UserRecipients
+            .Where(recipient => recipient.UserId > 0)
+            .GroupBy(recipient => recipient.UserId)
+            .Select(group => group.First())
+            .Select(recipient => new PatientPushRecipientDto(
+                access.PatientId,
+                recipient.UserId,
+                recipient.FullName,
+                recipient.PhoneNumber))
+            .ToArray();
 
-        var recipientUserIds = new List<long>();
-        if (access.OfficialGuardianUserId > 0)
-            recipientUserIds.Add(access.OfficialGuardianUserId);
+        var smsRecipients = access.EmergencyContacts
+            .Where(contact => !string.IsNullOrWhiteSpace(contact.PhoneNumber))
+            .GroupBy(contact => contact.PhoneNumber.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .Select(contact => new PatientSmsRecipientDto(
+                access.PatientId,
+                null,
+                contact.EmergencyContactId,
+                contact.FullName,
+                contact.PhoneNumber,
+                "EmergencyContact"))
+            .ToArray();
 
-        recipientUserIds.AddRange(caregiverUserIds);
-
-        if (access.CurrentGuardianUserId is > 0)
-        {
-            var currentGuardianUserId = access.CurrentGuardianUserId.Value;
-            var isAuthorized = currentGuardianUserId == access.OfficialGuardianUserId ||
-                               caregiverUserIds.Contains(currentGuardianUserId);
-
-            if (isAuthorized)
-                recipientUserIds.Add(currentGuardianUserId);
-        }
-
-        return recipientUserIds
-            .Where(userId => userId > 0)
-            .Distinct()
-            .Select(userId => new PatientNotificationRecipientDto(access.PatientId, userId))
-            .ToList();
+        return new PatientNotificationRecipientsDto(access.PatientId, pushRecipients, smsRecipients);
     }
 }

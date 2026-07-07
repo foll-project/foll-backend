@@ -2,6 +2,7 @@ using foll_backend.IAM.Domain.Services;
 using foll_backend.IAM.Interfaces.REST.Resources;
 using foll_backend.IAM.Interfaces.REST.Transform;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace foll_backend.IAM.Interfaces.REST;
 
@@ -51,5 +52,30 @@ public class AuthenticationController : ControllerBase
         var response = LoginQueryFromRequestAssembler.ToResponse(user, token);
 
         return Ok(response);
+    }
+
+    [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+    [HttpDelete]
+    public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountResource resource)
+    {
+        var claim = User.FindFirst("userId")?.Value;
+        if (!long.TryParse(claim, out var userId) || userId <= 0)
+            return Unauthorized(new { message = "JWT inválido: userId no encontrado." });
+
+        var command = new foll_backend.IAM.Domain.Model.Commands.DeleteaccountCommand(userId, resource.Password);
+
+        try
+        {
+            await _userCommandService.Handle(command);
+            return Ok(new { message = "Cuenta eliminada exitosamente. Adiós." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Ocurrió un error interno al intentar eliminar la cuenta." });
+        }
     }
 }

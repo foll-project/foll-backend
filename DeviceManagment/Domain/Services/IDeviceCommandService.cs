@@ -9,4 +9,5 @@ public interface IDeviceCommandService
     Task Handle(RegisterDeviceTelemetryCommand command);
     Task Handle(CheckDeviceConnectivityCommand command);
     Task Handle(UpdateDevicePowerStateCommand command);
+    Task<IEnumerable<long>> Handle(UnlinkDevicesByAccountCommand command);
 }

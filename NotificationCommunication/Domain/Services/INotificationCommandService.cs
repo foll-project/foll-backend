@@ -7,4 +7,5 @@ public interface INotificationCommandService
     Task<long> Handle(CreateNotificationFromEventCommand command);
     Task Handle(MarkNotificationReadCommand command);
     Task Handle(MarkNotificationAcknowledgedCommand command);
+    Task Handle(DeleteNotificationsByAccountCommand command);
 }

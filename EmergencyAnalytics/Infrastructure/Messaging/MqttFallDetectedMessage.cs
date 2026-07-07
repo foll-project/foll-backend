@@ -25,6 +25,9 @@ public class MqttFallDetectedMessage
     [JsonPropertyName("longitude")]
     public decimal? Longitude { get; init; }
 
+    [JsonPropertyName("address")]
+    public string? Address { get; init; }
+
     [JsonPropertyName("timestamp")]
     public DateTime? ReportedAtUtc { get; init; }
 }

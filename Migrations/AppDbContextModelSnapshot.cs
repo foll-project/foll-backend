@@ -375,6 +375,11 @@ namespace foll_backend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("EmergencyIncidentId"));
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("address");
+
                     b.Property<decimal?>("AiConfidenceScore")
                         .HasColumnType("numeric(5,4)")
                         .HasColumnName("ai_confidence_score");
@@ -640,6 +645,65 @@ namespace foll_backend.Migrations
                     b.ToTable("users", "iam");
                 });
 
+            modelBuilder.Entity("foll_backend.NotificationCommunication.Domain.Model.Entities.EmergencyLocationAccessLink", b =>
+                {
+                    b.Property<long>("EmergencyLocationAccessLinkId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("emergency_location_access_link_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("EmergencyLocationAccessLinkId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<long?>("DeviceId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("device_id");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("IncidentKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("incident_key");
+
+                    b.Property<DateTime?>("LastAccessedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_accessed_at");
+
+                    b.Property<long>("PatientId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("patient_id");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("token_hash");
+
+                    b.HasKey("EmergencyLocationAccessLinkId")
+                        .HasName("pk_emergency_location_access_links");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_emergency_location_access_links_expires_at");
+
+                    b.HasIndex("IncidentKey")
+                        .HasDatabaseName("ix_emergency_location_access_links_incident_key");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_emergency_location_access_links_token_hash");
+
+                    b.ToTable("emergency_location_access_links", "notification");
+                });
+
             modelBuilder.Entity("foll_backend.NotificationCommunication.Domain.Model.Entities.NotificationLog", b =>
                 {
                     b.Property<long>("NotificationLogId")
@@ -748,6 +812,118 @@ namespace foll_backend.Migrations
                         .HasDatabaseName("ix_notification_logs_user_id");
 
                     b.ToTable("notification_logs", "notification");
+                });
+
+            modelBuilder.Entity("foll_backend.NotificationCommunication.Domain.Model.Entities.SmsNotificationLog", b =>
+                {
+                    b.Property<long>("SmsNotificationLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("sms_notification_log_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("SmsNotificationLogId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<long?>("DeviceId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("device_id");
+
+                    b.Property<long?>("EmergencyContactId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("emergency_contact_id");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("error_message");
+
+                    b.Property<Guid>("IncidentKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("incident_key");
+
+                    b.Property<string>("LocationAccessUrl")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("location_access_url");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("message");
+
+                    b.Property<string>("NotificationStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("notification_status");
+
+                    b.Property<string>("NotificationType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("notification_type");
+
+                    b.Property<long>("PatientId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("patient_id");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("provider_message_id");
+
+                    b.Property<string>("RecipientName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("recipient_name");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("sent_at");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("SmsNotificationLogId")
+                        .HasName("pk_sms_notification_logs");
+
+                    b.HasIndex("EmergencyContactId")
+                        .HasDatabaseName("ix_sms_notification_logs_emergency_contact_id");
+
+                    b.HasIndex("IncidentKey")
+                        .HasDatabaseName("ix_sms_notification_logs_incident_key");
+
+                    b.HasIndex("NotificationStatus")
+                        .HasDatabaseName("ix_sms_notification_logs_notification_status");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("ix_sms_notification_logs_patient_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_sms_notification_logs_user_id");
+
+                    b.HasIndex("IncidentKey", "PhoneNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_sms_notification_logs_incident_key_phone_number");
+
+                    b.ToTable("sms_notification_logs", "notification");
                 });
 
             modelBuilder.Entity("foll_backend.NotificationCommunication.Domain.Model.Entities.UserPushToken", b =>

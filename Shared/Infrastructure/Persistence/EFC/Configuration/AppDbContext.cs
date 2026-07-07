@@ -30,6 +30,8 @@ public class AppDbContext : DbContext
     public DbSet<EmergencyOutboxMessage> EmergencyOutboxMessages { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
     public DbSet<NotificationLog> NotificationLogs { get; set; }
+    public DbSet<SmsNotificationLog> SmsNotificationLogs { get; set; }
+    public DbSet<EmergencyLocationAccessLink> EmergencyLocationAccessLinks { get; set; }
     public DbSet<UserPushToken> UserPushTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)

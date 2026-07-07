@@ -53,6 +53,7 @@ public class EmergencyIncidentCommandService : IEmergencyIncidentCommandService
                 command.AiConfidenceScore,
                 command.Latitude,
                 command.Longitude,
+                command.Address,
                 command.RawPayload);
 
             await _incidentRepository.AddAsync(incident);
@@ -65,6 +66,7 @@ public class EmergencyIncidentCommandService : IEmergencyIncidentCommandService
                 command.AiConfidenceScore,
                 command.Latitude,
                 command.Longitude,
+                command.Address,
                 command.RawPayload);
 
             _incidentRepository.Update(incident);
@@ -149,7 +151,8 @@ public class EmergencyIncidentCommandService : IEmergencyIncidentCommandService
                             opened.OpenedAtUtc,
                             opened.AiConfidenceScore,
                             opened.Latitude,
-                            opened.Longitude),
+                            opened.Longitude,
+                            opened.Address),
                         opened.OccurredOn));
                     break;
 
@@ -226,5 +229,11 @@ public class EmergencyIncidentCommandService : IEmergencyIncidentCommandService
     {
         return await _fallTypeRepository.FindByIdAsync(fallTypeId)
             ?? throw new InvalidOperationException($"No existe el tipo de caída con id {fallTypeId}.");
+    }
+
+    public async Task Handle(DeleteEmergenciesByAccountCommand command)
+    {
+        await _incidentRepository.DeleteByPatientIdsAsync(command.PatientIds);
+        await _unitOfWork.CompleteAsync();
     }
 }

@@ -30,4 +30,18 @@ public class NotificationLogRepository : BaseRepository<NotificationLog>, INotif
         return await Context.Set<NotificationLog>()
             .FirstOrDefaultAsync(n => n.NotificationLogId == notificationLogId && n.UserId == userId);
     }
+
+    public async Task DeleteByUserIdAsync(long userId)
+    {
+        if (userId <= 0) return;
+
+        var logs = await Context.Set<NotificationLog>()
+            .Where(n => n.UserId == userId)
+            .ToListAsync();
+
+        if (logs.Any())
+        {
+            Context.Set<NotificationLog>().RemoveRange(logs);
+        }
+    }
 }

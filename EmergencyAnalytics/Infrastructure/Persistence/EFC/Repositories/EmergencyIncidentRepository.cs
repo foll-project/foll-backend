@@ -44,6 +44,15 @@ public class EmergencyIncidentRepository : BaseRepository<EmergencyIncident>, IE
             .FirstOrDefaultAsync(i => i.EmergencyIncidentId == incidentId);
     }
 
+    public async Task<EmergencyIncident?> FindByIncidentKeyWithFallTypeAsync(Guid incidentKey)
+    {
+        if (incidentKey == Guid.Empty) return null;
+
+        return await Context.Set<EmergencyIncident>()
+            .Include(i => i.FallType)
+            .FirstOrDefaultAsync(i => i.IncidentKey == incidentKey);
+    }
+
     public async Task<IReadOnlyCollection<EmergencyIncident>> ListByPatientIdAsync(long patientId)
     {
         if (patientId <= 0) return Array.Empty<EmergencyIncident>();
@@ -53,5 +62,19 @@ public class EmergencyIncidentRepository : BaseRepository<EmergencyIncident>, IE
             .Where(i => i.PatientId == patientId)
             .OrderByDescending(i => i.OpenedAt)
             .ToListAsync();
+    }
+
+    public async Task DeleteByPatientIdsAsync(IEnumerable<long> patientIds)
+    {
+        if (patientIds == null || !patientIds.Any()) return;
+
+        var incidents = await Context.Set<EmergencyIncident>()
+            .Where(i => patientIds.Contains(i.PatientId))
+            .ToListAsync();
+
+        if (incidents.Any())
+        {
+            Context.Set<EmergencyIncident>().RemoveRange(incidents);
+        }
     }
 }

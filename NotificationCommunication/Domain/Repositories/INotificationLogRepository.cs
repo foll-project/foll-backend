@@ -7,4 +7,5 @@ public interface INotificationLogRepository : IBaseRepository<NotificationLog>
 {
     Task<IReadOnlyCollection<NotificationLog>> ListByUserIdAsync(long userId);
     Task<NotificationLog?> FindByIdAndUserIdAsync(long notificationLogId, long userId);
+    Task DeleteByUserIdAsync(long userId);
 }

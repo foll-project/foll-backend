@@ -238,6 +238,30 @@ public class PatientCommandService : IPatientCommandService
             $"Tu solicitud para cuidar a {patientName} {resultadoTexto}.",
             DateTime.UtcNow));
     }
+    public async Task Handle(DeletePatientCommand command)
+    {
+        var patient = await _patientRepository.FindByIdAsync(command.PatientId);
+        if (patient is null) throw new InvalidOperationException("Paciente no encontrado.");
+
+        if (patient.OfficialGuardianUserId != command.UserId)
+            throw new UnauthorizedAccessException("Solo el OficialGuardian puede eliminar al paciente.");
+
+        _patientRepository.Remove(patient);
+        await _unitOfWork.CompleteAsync();
+    }
+
+    public async Task<IEnumerable<long>> Handle(DeletePatientsByAccountCommand command)
+    {
+        var patientIds = await _patientRepository.GetPatientIdsByOfficialGuardianAsync(command.UserId);
+        
+        foreach (var patientId in patientIds)
+        {
+            var deleteCommand = new DeletePatientCommand(command.UserId, patientId);
+            await Handle(deleteCommand);
+        }
+
+        return patientIds;
+    }
 
     private async Task<string> ResolveUserNameAsync(long userId)
     {

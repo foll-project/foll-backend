@@ -27,6 +27,7 @@
     <PackageReference Include="MQTTnet" Version="5.1.0.1559" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Twilio" Version="7.14.9" />
   </ItemGroup>
 
 </Project>

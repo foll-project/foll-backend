@@ -225,7 +225,12 @@ builder.Services.AddScoped<IPushNotificationSender>(serviceProvider =>
 });
 builder.Services.AddScoped<ISmsNotificationSender>(serviceProvider =>
 {
-    // Punto de extension para Twilio/Infobip. Mientras no exista proveedor real, se usa Fake.
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var smsProvider = configuration["Sms:Provider"] ?? configuration["Notifications:SmsProvider"] ?? "Fake";
+
+    if (smsProvider.Equals("Twilio", StringComparison.OrdinalIgnoreCase))
+        return ActivatorUtilities.CreateInstance<TwilioSmsNotificationSender>(serviceProvider);
+
     return ActivatorUtilities.CreateInstance<FakeSmsNotificationSender>(serviceProvider);
 });
 
